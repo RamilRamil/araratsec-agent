@@ -30,19 +30,9 @@ jobs:
         with:
           python-version: "3.11"
 
-      # The kernel (secure-agent-kernel) is a PRIVATE dependency, pinned by git
-      # URL in pyproject.toml. The default GITHUB_TOKEN cannot read another
-      # private repo, so a Personal Access Token with READ access to
-      # RamilRamil/secure-agent-kernel must be stored as the repo/Actions secret
-      # KERNEL_CLONE_TOKEN. This rewrites https github.com clones to use it, so
-      # `pip install` can resolve the @v0.1.1 pin. (If the kernel is ever made
-      # public, this step and the secret become unnecessary.)
-      - name: Auth for the private kernel dependency
-        run: |
-          git config --global \
-            url."https://x-access-token:${{ secrets.KERNEL_CLONE_TOKEN }}@github.com/".insteadOf \
-            "https://github.com/"
-
+      # The kernel (secure-agent-kernel) is a PUBLIC dependency, pinned by git
+      # URL in pyproject.toml, so the git clone needs no auth — pip resolves the
+      # @v0.1.1 pin over anonymous https.
       - name: Install (kernel resolved from the @v0.1.1 git pin)
         run: |
           python -m pip install --upgrade pip
