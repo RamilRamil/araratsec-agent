@@ -1,0 +1,4 @@
+vm.startPrank(bob);
+helper.foo();
+target.method();
+vm.stopPrank();

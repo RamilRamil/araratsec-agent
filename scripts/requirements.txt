@@ -1,0 +1,11 @@
+# Extra dependencies for the standalone PoC-workability harness
+# (scripts/poc_queue_runner.py + scripts/solidity_index.py) — NOT part of
+# sr_agent's own pyproject.toml. Harness-only per specs/007-ast-grounded-poc-drafting
+# research.md R5: the harness is a separate standalone experiment/tool, not the
+# task-agnostic kernel or the audit capability pack.
+#
+# Install: .venv/bin/pip install -r scripts/requirements.txt
+
+# Real Solidity AST parsing (ANTLR4-based) for scripts/solidity_index.py — replaces
+# ad-hoc regex extraction of structs/functions/modifiers with grammar-correct parsing.
+solidity-parser>=0.1.1

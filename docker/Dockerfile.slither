@@ -1,0 +1,11 @@
+FROM python:3.11-slim
+
+RUN pip install --no-cache-dir slither-analyzer==0.10.4 solc-select && \
+    solc-select install 0.8.20 && \
+    solc-select use 0.8.20
+
+WORKDIR /audit
+
+# Contracts mounted read-only at /audit/contracts by orchestrator
+# Results written to /audit/output (tmpfs volume, not host filesystem)
+ENTRYPOINT ["slither"]

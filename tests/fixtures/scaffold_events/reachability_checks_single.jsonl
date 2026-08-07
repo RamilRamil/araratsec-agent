@@ -1,0 +1,4 @@
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":1.0,"event":"provider","provider":"openrouter"}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":2.0,"event":"scaffold_synthesized","finding_id":"H-01","path":"x.sol","reachability_checks":[{"pattern":"config_manager_field","status":"incomplete","missing":["setConfigManager"],"protected_call_site":{"contract":"DemoVault","method":"gate"}}]}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":3.0,"event":"finding_terminal","finding_id":"H-01","finding_class":"access_control","terminal":true,"level":"finding_attempt","cause":"model","nature":"model"}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":4.0,"event":"done"}

@@ -1,0 +1,220 @@
+{
+  "findings": [
+    {
+      "task_id": "2",
+      "legacy_code": 2,
+      "rule_id": "unallowed_manipulation",
+      "title": "External State Manipulation",
+      "category": "StateAndMutation",
+      "portability": "portable_with_adapter",
+      "confidence": "medium",
+      "message": "Alert: Some value has been assigned to sensitive state from function inputs in Base._credit, line: { balances[user] += amount",
+      "remediation_hint": "Check assignments sourced from inputs or external values before they update sensitive state.",
+      "evidences": [
+        {
+          "kind": "message",
+          "summary": "Alert: Some value has been assigned to sensitive state from function inputs in Base._credit, line: { balances[user] += amount",
+          "type_name": "Base",
+          "function_name": "_credit",
+          "statement": "{ balances[user] += amount",
+          "source_statement": "{ balances[user] += amount",
+          "confidence_reason": "mutation_detected_from_state_assignment",
+          "line_number": 0,
+          "line_numbers": []
+        }
+      ],
+      "source_file": "Vault.sol"
+    },
+    {
+      "task_id": "8",
+      "legacy_code": 8,
+      "rule_id": "check_order",
+      "title": "Sensitive Call Ordering",
+      "category": "FlowAndOrdering",
+      "portability": "portable_with_adapter",
+      "confidence": "medium",
+      "message": "Alert1: fetch function did not occur before transfer in 'Vault.withdraw' function",
+      "remediation_hint": "Check whether fetch, price, or preparation logic happens immediately before transfer-like effects.",
+      "evidences": [
+        {
+          "kind": "message",
+          "summary": "Alert1: fetch function did not occur before transfer in 'Vault.withdraw' function",
+          "type_name": "Vault",
+          "function_name": "withdraw",
+          "statement": "Vault.withdraw",
+          "source_statement": "Vault.withdraw",
+          "confidence_reason": "matched_qualified_function_name",
+          "line_number": 0,
+          "line_numbers": []
+        }
+      ],
+      "source_file": "Vault.sol"
+    },
+    {
+      "task_id": "taint",
+      "legacy_code": 0,
+      "rule_id": "tainted_input_unguarded_sink",
+      "title": "Untrusted input reaches a sensitive sink without a guard",
+      "category": "dataflow",
+      "portability": "portable",
+      "confidence": "medium",
+      "message": "Untrusted 'amount' reaches sink 'balances' in Base._credit without a guard: { balances[user] += amount",
+      "remediation_hint": "Validate or guard untrusted input before it reaches the sink (heuristic intra-procedural taint; review the source->sink path).",
+      "evidences": [
+        {
+          "kind": "message",
+          "summary": "Untrusted 'amount' reaches sink 'balances' in Base._credit without a guard: { balances[user] += amount",
+          "type_name": "Base",
+          "function_name": "_credit",
+          "statement": "{ balances[user] += amount",
+          "source_statement": "{ balances[user] += amount",
+          "confidence_reason": "mutation_detected_from_state_assignment",
+          "line_number": 0,
+          "line_numbers": []
+        }
+      ],
+      "source_file": "Vault.sol"
+    },
+    {
+      "task_id": "taint",
+      "legacy_code": 0,
+      "rule_id": "tainted_input_unguarded_sink",
+      "title": "Untrusted input reaches a sensitive sink without a guard",
+      "category": "dataflow",
+      "portability": "portable",
+      "confidence": "medium",
+      "message": "Untrusted 'user' reaches sink 'balances' in Base._credit without a guard: { balances[user] += amount",
+      "remediation_hint": "Validate or guard untrusted input before it reaches the sink (heuristic intra-procedural taint; review the source->sink path).",
+      "evidences": [
+        {
+          "kind": "message",
+          "summary": "Untrusted 'user' reaches sink 'balances' in Base._credit without a guard: { balances[user] += amount",
+          "type_name": "Base",
+          "function_name": "_credit",
+          "statement": "{ balances[user] += amount",
+          "source_statement": "{ balances[user] += amount",
+          "confidence_reason": "mutation_detected_from_state_assignment",
+          "line_number": 0,
+          "line_numbers": []
+        }
+      ],
+      "source_file": "Vault.sol"
+    },
+    {
+      "task_id": "taint",
+      "legacy_code": 0,
+      "rule_id": "tainted_input_unguarded_sink",
+      "title": "Untrusted input reaches a sensitive sink without a guard",
+      "category": "dataflow",
+      "portability": "portable",
+      "confidence": "medium",
+      "message": "Untrusted 'amount' reaches sink 'send' in Vault.withdraw without a guard: { (bool ok, ) = msg.sender.call{value: amount}(\"\")",
+      "remediation_hint": "Validate or guard untrusted input before it reaches the sink (heuristic intra-procedural taint; review the source->sink path).",
+      "evidences": [
+        {
+          "kind": "message",
+          "summary": "Untrusted 'amount' reaches sink 'send' in Vault.withdraw without a guard: { (bool ok, ) = msg.sender.call{value: amount}(\"\")",
+          "type_name": "Vault",
+          "function_name": "withdraw",
+          "statement": "send",
+          "source_statement": "send",
+          "confidence_reason": "matched_qualified_function_name",
+          "line_number": 19,
+          "line_numbers": [
+            19,
+            23,
+            25
+          ]
+        }
+      ],
+      "source_file": "Vault.sol"
+    },
+    {
+      "task_id": "taint",
+      "legacy_code": 0,
+      "rule_id": "tainted_input_unguarded_sink",
+      "title": "Untrusted input reaches a sensitive sink without a guard",
+      "category": "dataflow",
+      "portability": "portable",
+      "confidence": "medium",
+      "message": "Untrusted 'ok' reaches sink 'send' in Vault.withdraw without a guard: { (bool ok, ) = msg.sender.call{value: amount}(\"\")",
+      "remediation_hint": "Validate or guard untrusted input before it reaches the sink (heuristic intra-procedural taint; review the source->sink path).",
+      "evidences": [
+        {
+          "kind": "message",
+          "summary": "Untrusted 'ok' reaches sink 'send' in Vault.withdraw without a guard: { (bool ok, ) = msg.sender.call{value: amount}(\"\")",
+          "type_name": "Vault",
+          "function_name": "withdraw",
+          "statement": "send",
+          "source_statement": "send",
+          "confidence_reason": "matched_qualified_function_name",
+          "line_number": 19,
+          "line_numbers": [
+            19,
+            23,
+            25
+          ]
+        }
+      ],
+      "source_file": "Vault.sol"
+    },
+    {
+      "task_id": "taint",
+      "legacy_code": 0,
+      "rule_id": "tainted_input_unguarded_sink",
+      "title": "Untrusted input reaches a sensitive sink without a guard",
+      "category": "dataflow",
+      "portability": "portable",
+      "confidence": "medium",
+      "message": "Untrusted 'amount' reaches sink 'send' in Vault.withdraw without a guard: balances[msg.sender] -= amount",
+      "remediation_hint": "Validate or guard untrusted input before it reaches the sink (heuristic intra-procedural taint; review the source->sink path).",
+      "evidences": [
+        {
+          "kind": "message",
+          "summary": "Untrusted 'amount' reaches sink 'send' in Vault.withdraw without a guard: balances[msg.sender] -= amount",
+          "type_name": "Vault",
+          "function_name": "withdraw",
+          "statement": "send",
+          "source_statement": "send",
+          "confidence_reason": "matched_qualified_function_name",
+          "line_number": 19,
+          "line_numbers": [
+            19,
+            23,
+            25
+          ]
+        }
+      ],
+      "source_file": "Vault.sol"
+    },
+    {
+      "task_id": "taint",
+      "legacy_code": 0,
+      "rule_id": "tainted_input_unguarded_sink",
+      "title": "Untrusted input reaches a sensitive sink without a guard",
+      "category": "dataflow",
+      "portability": "portable",
+      "confidence": "medium",
+      "message": "Untrusted 'sender' reaches sink 'send' in Vault.withdraw without a guard: balances[msg.sender] -= amount",
+      "remediation_hint": "Validate or guard untrusted input before it reaches the sink (heuristic intra-procedural taint; review the source->sink path).",
+      "evidences": [
+        {
+          "kind": "message",
+          "summary": "Untrusted 'sender' reaches sink 'send' in Vault.withdraw without a guard: balances[msg.sender] -= amount",
+          "type_name": "Vault",
+          "function_name": "withdraw",
+          "statement": "send",
+          "source_statement": "send",
+          "confidence_reason": "matched_qualified_function_name",
+          "line_number": 19,
+          "line_numbers": [
+            19,
+            23,
+            25
+          ]
+        }
+      ],
+      "source_file": "Vault.sol"
+    }
+  ]
+}

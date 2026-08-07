@@ -1,0 +1,7 @@
+{"run_id":"R2","model":"m/test","code_version":"abc1234","ts":1.0,"event":"provider","provider":"openrouter"}
+{"run_id":"R2","model":"m/test","code_version":"abc1234","ts":2.0,"event":"synth_terminal","finding_id":"H-01","terminal":true,"level":"synthesis_attempt","attempt_seq":1,"cause":"synthesized","ok":true}
+{"run_id":"R2","model":"m/test","code_version":"abc1234","ts":2.1,"event":"finding_terminal","finding_id":"H-01","finding_class":"accounting_manipulation","terminal":true,"level":"finding_attempt","cause":"proved","ok":true}
+{"run_id":"R2","model":"m/test","code_version":"abc1234","ts":3.0,"event":"budget_reached","max_minutes":30,"done_before_stop":1}
+{"run_id":"R2","model":"m/test","code_version":"abc1234","ts":3.1,"event":"finding_terminal","finding_id":"H-02","finding_class":"denial_of_service","terminal":true,"level":"finding_attempt","cause":"not_attempted:budget"}
+{"run_id":"R2","model":"m/test","code_version":"abc1234","ts":3.2,"event":"finding_terminal","finding_id":"H-03","finding_class":"state_init_collision","terminal":true,"level":"finding_attempt","cause":"not_attempted:budget"}
+{"run_id":"R2","model":"m/test","code_version":"abc1234","ts":4.0,"event":"done"}

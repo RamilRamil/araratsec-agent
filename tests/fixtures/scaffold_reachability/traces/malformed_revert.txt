@@ -1,0 +1,5 @@
+Traces:
+some garbage
+  <- [Revert] orphan reason with no header above
+
+[FAIL: orphan reason with no header above] testExploit()

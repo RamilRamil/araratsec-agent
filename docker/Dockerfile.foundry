@@ -1,0 +1,50 @@
+# Pre-bakes the solc compiler(s) a target project needs, so PoC execution can
+# run fully offline (--network none, Constitution I: sandboxed execution of
+# attacker/model-influenced code is always network-isolated).
+#
+# ghcr.io/foundry-rs/foundry downloads solc from binaries.soliditylang.org on
+# first use of a given compiler version — under --network none that download
+# fails and the run looks like a fresh compile every time (docs/roadmap.md
+# gotcha, root-caused 2026-07-02). Baking `forge build` into the image at BUILD
+# time (network available then) means the resolved solc is already cached in
+# this layer; the same image then runs PoC tests with --network none.
+#
+# Build once per target project (or whenever its solc version pins change):
+#   docker build -f docker/Dockerfile.foundry \
+#     --build-arg PROJECT_DIR=<path to the Foundry project root> \
+#     -t sr-agent-foundry:<project> .
+#
+# Then point sandbox runs at sr-agent-foundry:<project> instead of
+# ghcr.io/foundry-rs/foundry:latest — same ENTRYPOINT (shell form), same
+# single-command-string calling convention (see write_execute.py::run_tests).
+FROM ghcr.io/foundry-rs/foundry:latest
+
+USER root
+WORKDIR /seed
+# Build context must be the target project root (contracts/foundry.toml etc.)
+# so `forge build` resolves and downloads every solc version the project
+# actually needs.
+COPY . /seed
+RUN chown -R foundry:foundry /seed
+USER foundry
+# `forge clean` first: a COPY'd project may carry a host-built cache_forge/out
+# that forge considers "up to date" and skips recompiling — which would skip
+# the solc download too and defeat the whole point of this seed step.
+#
+# Build test/ too (no --skip test): a PoC scaffold (a real project PoC base the
+# model inherits, e.g. under test/PoC/ or test/issuer/) commonly has its own
+# solc pin distinct from src/'s — root-caused 2026-07-05: test/issuer/
+# IssuerDeploy.t.sol pins `pragma solidity 0.8.28;` exactly, while src/ resolves
+# its caret range to 0.8.35; skipping test/ at bake time left 0.8.28 uncached, so
+# every PoC that transitively inherits that scaffold failed under --offline with
+# "invalid solc version" — a real compile failure that an earlier, less robust
+# detector (string-matching known failure phrases) silently misread as success.
+# `forge build` only COMPILES test/ here (never runs it) — safe at build time
+# with network available, using the project's own already-committed code.
+RUN forge clean && forge build --force
+# Stay as `foundry` (the base image's default user, uid 1000) for the final
+# image — solc gets cached under $HOME (/home/foundry/.svm), and a `docker run`
+# with no explicit --user picks up whatever USER this image ends on. Ending on
+# root here previously meant every PoC run used $HOME=/root (empty .svm) and
+# never found the solc this build step had just cached (root-caused 2026-07-02).
+WORKDIR /work

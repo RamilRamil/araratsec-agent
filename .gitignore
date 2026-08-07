@@ -1,0 +1,93 @@
+# Specify internal scaffolding (not needed in public repo) — machinery only.
+# The GOVERNANCE documents are tracked: the constitution declares itself the non-negotiable
+# authority and defines a formal amendment procedure (rationale + version bump + propagation),
+# which is unverifiable without a diff/review/revert trail; and the templates are the INPUTS
+# specs are generated from, so untracked templates make an old spec's provenance unexplainable.
+# Note the `.specify/*` form: a bare `.specify/` excludes the directory itself, and git will not
+# descend into an excluded directory, so per-file negations below would never take effect.
+.specify/*
+!.specify/memory/
+.specify/memory/*
+!.specify/memory/constitution.md
+!.specify/templates/
+session-summary.md
+
+# Runtime agent memory (project-specific, never commit)
+# /memory/ = top-level only; sr_agent/memory/ is source code and IS tracked
+/memory/
+
+# Fine-tuning artifacts (large files, dataset-specific) — keep README tracked
+data/finetune/*.jsonl
+adapters/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.env
+
+# Ollama models volume (managed by Docker)
+ollama_models/
+
+# Langfuse volumes (self-hosted Docker)
+langfuse_postgres/
+langfuse_clickhouse/
+
+# Test artifacts
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Research paper PDFs — tracked locally, not committed (large binaries)
+research/papers/*.pdf
+
+# Out-of-band confirmation files (runtime, project-specific)
+/confirmations/
+
+# Experiential-knowledge-loop stores (feature 014, runtime). Both are key-specific and
+# NOT committed: the pending candidate queue, and the promoted-lesson corpus (HMAC-signed
+# under the operator's SR_SECRET_KEY — dev-key-signed lessons must never enter the repo).
+/lessons/
+/knowledge/lessons/
+
+# Local operator runbooks (per-run target paths / tunnel URLs — never commit)
+*.local.md
+
+# Generated PoC test files (Phase 6 output, not source)
+tests/poc/
+
+# Linter / type checker caches
+.mypy_cache/
+.ruff_cache/
+
+# Foundry build artifacts
+forge-cache/
+out/
+cache/
+
+# macOS
+.DS_Store
+/relay/
+
+# target-specific PoC artifacts must never enter the agent repo
+scripts/poc_queue.json
+**/_extracted_tasks.json
+
+# codegraph (spec 017): generated code-map output, never committed
+graphify-out/
+
+# cloned audit targets (spec 021): fetched target code, never committed
+/workspaces/
+
+# graphify tool output — contains target AST/graph, never commit
+.graphify-research/
+
+# Design specs — kept local, not tracked (contain audited-target references; feature 048 privacy decision 2026-08-07)
+specs/
+
+# Dev-history log — kept local, not tracked (richest audited-target run narratives)
+docs/roadmap.md

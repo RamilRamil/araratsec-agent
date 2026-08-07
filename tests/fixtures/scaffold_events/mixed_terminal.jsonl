@@ -1,0 +1,12 @@
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":1.0,"event":"provider","provider":"openrouter"}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":1.1,"event":"extracted","count":3}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":2.0,"event":"grounding","finding_id":"H-01"}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":2.1,"event":"scaffold_insufficient","finding_id":"H-01","missing_types":["RoleA"]}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":2.2,"event":"scaffold_repair","finding_id":"H-01","round":1}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":2.3,"event":"synth_terminal","finding_id":"H-01","terminal":true,"level":"synthesis_attempt","attempt_seq":1,"cause":"no_build:toolchain","nature":"harness-infra","stderr_signature":"no compiler versions available"}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":2.4,"event":"finding_terminal","finding_id":"H-01","finding_class":"denial_of_service","terminal":true,"level":"finding_attempt","cause":"model","nature":"model"}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":3.0,"event":"synth_terminal","finding_id":"H-02","terminal":true,"level":"synthesis_attempt","attempt_seq":1,"cause":"synthesized","ok":true}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":3.1,"event":"finding_terminal","finding_id":"H-02","finding_class":"accounting_manipulation","terminal":true,"level":"finding_attempt","cause":"proved","ok":true}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":4.0,"event":"synth_terminal","finding_id":"H-03","terminal":true,"level":"synthesis_attempt","attempt_seq":1,"cause":"no_output:model","nature":"synth-model"}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":4.1,"event":"finding_terminal","finding_id":"H-03","finding_class":"state_init_collision","terminal":true,"level":"finding_attempt","cause":"not_triggered"}
+{"run_id":"R1","model":"m/test","code_version":"abc1234","ts":5.0,"event":"done"}

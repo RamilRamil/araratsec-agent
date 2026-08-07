@@ -1,0 +1,3 @@
+vm.prank(alice);
+uint256 x = 1;
+target.method();

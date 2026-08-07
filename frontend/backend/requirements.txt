@@ -1,0 +1,4 @@
+# Operator frontend backend (feature 005). Installed alongside the sr_agent
+# package (which the backend imports directly, like cli.py). No paid-API client.
+fastapi>=0.110
+uvicorn[standard]>=0.29

@@ -1,0 +1,7 @@
+Traces:
+[500] ExploitTest::testExploit()
+  [200] CooldownVault_Impl::setVaultBounds(1, 2)
+  <- [Revert] ConfigManagerOnly()
+<- [Revert] ConfigManagerOnly()
+
+[FAIL: ConfigManagerOnly()] testExploit()

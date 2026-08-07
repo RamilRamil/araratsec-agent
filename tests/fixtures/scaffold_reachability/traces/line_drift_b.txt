@@ -1,0 +1,9 @@
+Traces:
+[12001] ExploitTest::testExploit()
+  [3001] DemoVault::probe() [staticcall]
+  <- [Return] 1
+  [881] DemoVault::gate() [staticcall]
+  <- [Revert] gate blocks the caller
+<- [Revert] gate blocks the caller
+
+[FAIL: gate blocks the caller] testExploit()

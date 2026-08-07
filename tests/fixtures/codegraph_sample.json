@@ -1,0 +1,26 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {"id": "main", "label": "main.py", "file_type": "code", "source_file": "main.py", "source_location": "L1", "_origin": "ast", "community": 0, "norm_label": "main.py"},
+    {"id": "main_run", "label": "run()", "file_type": "code", "source_file": "main.py", "source_location": "L3", "_origin": "ast", "community": 0, "norm_label": "run"},
+    {"id": "util", "label": "util.py", "file_type": "code", "source_file": "util.py", "source_location": "L1", "_origin": "ast", "community": 1, "norm_label": "util.py"},
+    {"id": "util_add", "label": "add()", "file_type": "code", "source_file": "util.py", "source_location": "L1", "_origin": "ast", "community": 1, "norm_label": "add"},
+    {"id": "util_calc", "label": "Calc", "file_type": "code", "source_file": "util.py", "source_location": "L4", "_origin": "ast", "community": 1, "norm_label": "Calc"},
+    {"id": "util_calc_total", "label": ".total()", "file_type": "code", "source_file": "util.py", "source_location": "L5", "_origin": "ast", "community": 1, "norm_label": "total"}
+  ],
+  "links": [
+    {"source": "main", "target": "main_run", "relation": "contains", "confidence": "EXTRACTED", "source_file": "main.py", "source_location": "L3", "weight": 1.0, "confidence_score": 1.0},
+    {"source": "main", "target": "util", "relation": "imports_from", "confidence": "EXTRACTED", "source_file": "main.py", "source_location": "L1", "weight": 1.0, "confidence_score": 1.0},
+    {"source": "main", "target": "util_add", "relation": "imports", "confidence": "EXTRACTED", "source_file": "main.py", "source_location": "L1", "weight": 1.0, "confidence_score": 1.0},
+    {"source": "main", "target": "util_calc", "relation": "imports", "confidence": "EXTRACTED", "source_file": "main.py", "source_location": "L1", "weight": 1.0, "confidence_score": 1.0},
+    {"source": "main_run", "target": "util_add", "relation": "calls", "confidence": "EXTRACTED", "source_file": "main.py", "source_location": "L5", "weight": 1.0, "confidence_score": 1.0},
+    {"source": "main_run", "target": "util_calc", "relation": "calls", "confidence": "EXTRACTED", "source_file": "main.py", "source_location": "L4", "weight": 1.0, "confidence_score": 1.0},
+    {"source": "util", "target": "util_add", "relation": "contains", "confidence": "EXTRACTED", "source_file": "util.py", "source_location": "L1", "weight": 1.0, "confidence_score": 1.0},
+    {"source": "util", "target": "util_calc", "relation": "contains", "confidence": "EXTRACTED", "source_file": "util.py", "source_location": "L4", "weight": 1.0, "confidence_score": 1.0},
+    {"source": "util_calc_total", "target": "util_add", "relation": "calls", "confidence": "EXTRACTED", "source_file": "util.py", "source_location": "L6", "weight": 1.0, "confidence_score": 1.0},
+    {"source": "util_calc", "target": "util_calc_total", "relation": "method", "confidence": "EXTRACTED", "source_file": "util.py", "source_location": "L5", "weight": 1.0, "confidence_score": 1.0}
+  ],
+  "hyperedges": []
+}

@@ -1,0 +1,5 @@
+[
+  {"caller": "alice", "site": ["DemoVault", "gate"], "sel": "ConfigManagerOnly"},
+  {"caller": "bob", "site": ["DemoVault", "gate"], "sel": "ConfigManagerOnly"},
+  {"caller": null, "site": ["DemoVault", "gate"], "sel": "ConfigManagerOnly"}
+]

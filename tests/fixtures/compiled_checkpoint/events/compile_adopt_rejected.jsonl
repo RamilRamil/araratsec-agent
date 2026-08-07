@@ -1,0 +1,2 @@
+{"event":"compile_adopt_rejected","finding_id":"H-01","attempt":7,"artifact_path":"audit/poc/_runs/runZ/poc_attempts/H-01/a7_post_det.sol.txt","restore_attempt":5,"restore_kind":"non_vacuous"}
+{"event":"task_done","finding_id":"H-01","outcome":"exhausted","terminal":true,"cause":"exhausted","nature":"model"}

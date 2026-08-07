@@ -1,0 +1,121 @@
+{
+  "nodes": [
+    {
+      "id": "type:Base",
+      "group": "type",
+      "label": "Base",
+      "kind": "contract_like"
+    },
+    {
+      "id": "function:Base._credit",
+      "group": "function",
+      "label": "_credit",
+      "parent": "type:Base",
+      "type_name": "Base",
+      "visibility": "internal",
+      "is_entrypoint": false,
+      "source_body": "{ balances[user] += amount; }",
+      "full_source": "function _credit(address user, uint256 amount)\n    internal {\n    balances[user] += amount;\n}",
+      "state_reads": [],
+      "state_writes": [
+        "{ balances[user] += amount"
+      ],
+      "guards": [],
+      "write_paths": [
+        {
+          "path": "self -> { balances[user] += amount",
+          "confidence": "high"
+        }
+      ],
+      "calls_internal": false,
+      "calls_contract": false,
+      "calls_system": false,
+      "calls_event": false,
+      "calls_custom_error": false,
+      "calls_include_template": false
+    },
+    {
+      "id": "state:Base.balances",
+      "group": "state",
+      "label": "balances",
+      "parent": "type:Base",
+      "type_name": "Base",
+      "kind": "state_variable",
+      "source_body": "mapping(address => uint256) public balances",
+      "visibility": "public",
+      "variable_type": "mapping(address => uint256)"
+    },
+    {
+      "id": "type:Vault",
+      "group": "type",
+      "label": "Vault",
+      "kind": "contract_like"
+    },
+    {
+      "id": "function:Vault.deposit",
+      "group": "function",
+      "label": "deposit",
+      "parent": "type:Vault",
+      "type_name": "Vault",
+      "visibility": "external",
+      "is_entrypoint": true,
+      "source_body": "{ _credit(msg.sender, msg.value); }",
+      "full_source": "function deposit()\n    external payable {\n    _credit(msg.sender, msg.value);\n}",
+      "state_reads": [],
+      "state_writes": [],
+      "guards": [],
+      "write_paths": [],
+      "calls_internal": false,
+      "calls_contract": false,
+      "calls_system": false,
+      "calls_event": false,
+      "calls_custom_error": false,
+      "calls_include_template": false
+    },
+    {
+      "id": "function:Vault.withdraw",
+      "group": "function",
+      "label": "withdraw",
+      "parent": "type:Vault",
+      "type_name": "Vault",
+      "visibility": "external",
+      "is_entrypoint": true,
+      "source_body": "{ (bool ok, ) = msg.sender.call{value: amount}(\"\"); require(ok, \"transfer failed\"); balances[msg.sender] -= amount; }",
+      "full_source": "function withdraw(uint256 amount)\n    external {\n    (bool ok, ) = msg.sender.call{value: amount}(\"\");\n    require(ok, \"transfer failed\");\n    balances[msg.sender] -= amount;\n}",
+      "state_reads": [],
+      "state_writes": [],
+      "guards": [
+        "require(ok, \"transfer failed\");"
+      ],
+      "write_paths": [],
+      "calls_internal": false,
+      "calls_contract": false,
+      "calls_system": false,
+      "calls_event": false,
+      "calls_custom_error": false,
+      "calls_include_template": false
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:0",
+      "source": "state:Base.balances",
+      "target": "function:Base._credit",
+      "kind": "state_to_function_write",
+      "label": "",
+      "callsite": "",
+      "args_map": [],
+      "line_numbers": []
+    },
+    {
+      "id": "edge:1",
+      "source": "function:Vault.deposit",
+      "target": "function:Base._credit",
+      "kind": "cross_type_call",
+      "label": "",
+      "callsite": "",
+      "args_map": [],
+      "line_numbers": []
+    }
+  ]
+}

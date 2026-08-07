@@ -1,0 +1,4 @@
+vm.prank(alice);
+a.foo();
+vm.prank(carol);
+target.method();

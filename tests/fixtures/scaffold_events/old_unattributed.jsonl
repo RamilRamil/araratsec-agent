@@ -1,0 +1,4 @@
+{"event":"scaffold_insufficient","finding_id":"H-01","missing_types":["RoleA"]}
+{"event":"scaffold_synthesis_failed","finding_id":"H-01","reason":"no_output"}
+{"event":"scaffold_synthesized","finding_id":"H-02"}
+{"ts":1.0,"event":"scaffold_synthesis_failed","finding_id":"H-03","reason":"no_build"}

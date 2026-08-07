@@ -1,0 +1,4 @@
+[
+  {"caller": "alice", "site": ["DemoVault", "gate"], "sel": "ConfigManagerOnly"},
+  {"caller": "alice", "site": ["DemoVault", "gate"], "sel": "ConfigManagerOnly"}
+]

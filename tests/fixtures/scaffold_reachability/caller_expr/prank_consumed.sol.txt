@@ -1,0 +1,3 @@
+vm.prank(alice);
+unrelated.call();
+target.method();

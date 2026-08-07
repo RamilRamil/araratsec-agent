@@ -1,0 +1,15 @@
+FROM mythril/myth:latest
+
+# Bake solc 0.8.20 into the image at build time. At run time the container has
+# --network none, so Mythril cannot download a compiler; pre-installing it here
+# (while the build still has network) is what makes isolated analysis work.
+# solc-bin.ethereum.org is unreachable from this build, so fetch the static
+# binary from GitHub releases straight into the dir py-solc-x looks in (~/.solcx).
+RUN python3 -c "import urllib.request, os; d=os.path.expanduser('~/.solcx'); os.makedirs(d, exist_ok=True); p=os.path.join(d,'solc-v0.8.20'); urllib.request.urlretrieve('https://github.com/ethereum/solidity/releases/download/v0.8.20/solc-static-linux', p); os.chmod(p, 0o755)"
+
+WORKDIR /audit
+
+# Same isolation pattern as Slither:
+# --network=none enforced by orchestrator at docker run time
+# contracts at /audit/contracts (read-only bind mount)
+ENTRYPOINT ["myth"]

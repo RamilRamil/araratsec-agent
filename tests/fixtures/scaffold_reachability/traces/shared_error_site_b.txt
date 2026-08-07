@@ -1,0 +1,7 @@
+Traces:
+[100] ExploitTest::testExploit()
+  [50] VaultB::beta()
+  <- [Revert] Unauthorized()
+<- [Revert] Unauthorized()
+
+[FAIL: Unauthorized()] testExploit()

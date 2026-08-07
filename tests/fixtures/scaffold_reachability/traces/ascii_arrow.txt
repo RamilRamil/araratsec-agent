@@ -1,0 +1,7 @@
+Traces:
+[549] ExploitTest::testExploit()
+  [100] DemoVault::gate()
+  <- [Revert] gate blocks the caller
+<- [Revert] gate blocks the caller
+
+[FAIL: gate blocks the caller] testExploit()

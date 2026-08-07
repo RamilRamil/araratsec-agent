@@ -1,0 +1,2 @@
+vm.prank(alice);
+target.method();

@@ -1,0 +1,71 @@
+:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --panel-2: #1e2029;
+  --border: #2a2e3a;
+  --text: #d7dbe4;
+  --muted: #8b93a5;
+  --accent: #6ea8fe;
+  --warn: #f0b429;
+  --danger: #f0616d;
+  --ok: #4bd08b;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+button {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.primary { background: var(--accent); color: #0b0d12; border-color: var(--accent); }
+button.danger { border-color: var(--danger); color: var(--danger); }
+
+input, select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  width: 100%;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 10px; }
+
+.muted { color: var(--muted); }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.stack { display: flex; flex-direction: column; gap: 8px; }
+
+/* Provenance tiers — the trust boundary, made visible (US4). */
+.tier { font-size: 10px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap; }
+.tier-human_input { color: var(--ok); border-color: var(--ok); }
+.tier-tool_output { color: var(--accent); border-color: var(--accent); }
+.tier-external_llm_output, .tier-human_relayed_tool { color: var(--warn); border-color: var(--warn); }
+.tier-llm_inference { color: var(--danger); border-color: var(--danger); }
+.tier-unknown { color: var(--muted); }
+
+.badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); }
+.badge.ok { color: var(--ok); border-color: var(--ok); }
+.badge.warn { color: var(--warn); border-color: var(--warn); }
+.badge.bad { color: var(--danger); border-color: var(--danger); }

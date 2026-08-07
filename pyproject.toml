@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "araratsec-agent"
+version = "0.1.1"
+description = "Smart-contract audit agent — the audit CapabilityPack on the secure-agent-kernel"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+    # The task-agnostic kernel — consumed as a dependency, never vendored (FR-006).
+    # Dev uses an editable sibling: `pip install -e ../secure-agent-kernel`.
+    "secure-agent-kernel @ git+https://github.com/RamilRamil/secure-agent-kernel.git@v0.1.1",
+    # Audit-only dependencies (NOT in the kernel):
+    "web3>=7.0.0",          # on-chain reads
+    "docker>=7.0.0",        # sandbox containers
+    # Kernel-provided libraries used directly by audit code (declared for clarity;
+    # also pulled transitively by secure-agent-kernel):
+    "anthropic>=0.40.0",
+    "pydantic>=2.7.0",
+    "click>=8.1.0",
+    "rich>=13.7.0",
+    "cryptography>=42.0.0",
+    "langfuse>=2.0.0",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-timeout>=2.3.0",
+    "ruff>=0.4.0",
+]
+# Optional paid provider (spec 018). NOT a runtime dependency — the core loop
+# runs on the local model / relay without it (Constitution V). GeminiClient
+# imports it lazily and errors clearly if it's absent.
+gemini = [
+    "google-genai>=1.0.0",
+]
+
+[project.scripts]
+sr-agent = "audit_agent.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["audit_agent*", "frontend*", "scripts*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# Fail a hanging test fast with a stack dump instead of stalling CI to the job
+# timeout (mirrors the kernel). The offline audit suite finishes in ~10s.
+timeout = 60
+timeout_method = "thread"
