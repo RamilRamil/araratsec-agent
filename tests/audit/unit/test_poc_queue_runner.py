@@ -53,6 +53,53 @@ def two_contract_project(tmp_path: Path) -> Path:
 LOCATION = "ProtoCDO.coverage / calculateMode + CooldownVault.cancel"
 
 
+# ── T003 (spec 001): characterization of resolve_scaffold BEFORE the shared-helper
+# extraction (T004). Pins the current behavior so the refactor is provably
+# behavior-preserving (operator override, comma-split, absolute-vs-project-relative,
+# auto-discovery fallthrough, empty-on-total-non-resolution, disabled). ────────────
+def _foundry_test(project: Path) -> Path:
+    d = project / pqr._foundry_test_dir(project)
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def test_resolve_scaffold_operator_override_project_relative(tmp_path):
+    base = _foundry_test(tmp_path) / "Base.sol"
+    base.write_text("pragma solidity ^0.8.28;\ncontract Base {}", encoding="utf-8")
+    rel = base.relative_to(tmp_path).as_posix()
+    assert pqr.resolve_scaffold(tmp_path, rel, False) == [base.resolve()]
+
+
+def test_resolve_scaffold_operator_override_absolute(tmp_path):
+    base = _foundry_test(tmp_path) / "Base.sol"
+    base.write_text("pragma solidity ^0.8.28;\ncontract Base {}", encoding="utf-8")
+    assert pqr.resolve_scaffold(tmp_path, str(base), False) == [base.resolve()]
+
+
+def test_resolve_scaffold_disabled_returns_empty_even_with_auto_base(tmp_path):
+    td = _foundry_test(tmp_path)
+    (td / "ABase.sol").write_text("pragma solidity ^0.8.28;\ncontract ABase {}", encoding="utf-8")
+    (td / "Child.sol").write_text(
+        "pragma solidity ^0.8.28;\nimport './ABase.sol';\ncontract Child is ABase {}", encoding="utf-8")
+    assert pqr.resolve_scaffold(tmp_path, "", True) == []
+
+
+def test_resolve_scaffold_auto_discovers_most_inherited_base(tmp_path):
+    td = _foundry_test(tmp_path)
+    (td / "ABase.sol").write_text("pragma solidity ^0.8.28;\ncontract ABase {}", encoding="utf-8")
+    (td / "Child.sol").write_text(
+        "pragma solidity ^0.8.28;\nimport './ABase.sol';\ncontract Child is ABase {}", encoding="utf-8")
+    # non-git tmp dir → _tracked_sol empty → auto-discovery scans all .sol; ABase is the
+    # most-inherited base whose definition is a file → returned.
+    assert pqr.resolve_scaffold(tmp_path, "", False) == [(td / "ABase.sol").resolve()]
+
+
+def test_resolve_scaffold_operator_typo_falls_through_to_empty(tmp_path):
+    # operator path does not resolve AND no auto base exists → [] (the silent
+    # fall-through that spec-001 FR-011 pre-flight will later reject BEFORE this point).
+    assert pqr.resolve_scaffold(tmp_path, "test/DoesNotExist.sol", False) == []
+
+
 def test_location_names_skips_pascal_suffix_inside_camel_method():
     """calculateMode must not yield ExitMode as a deployable type name."""
     assert pqr._location_names(LOCATION) == ["ProtoCDO", "CooldownVault"]
