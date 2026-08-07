@@ -80,6 +80,8 @@ Two other surfaces drive the same pack:
   whether a local model can autonomously draft proof-of-code for an external report's
   findings end-to-end (detection list + PoC), grounded only in the target's own
   original (git-tracked) code. Run against an external `POC_PROJECT`/`POC_REPORT`.
+  Before a run, the **target** needs a usable deploy/PoC scaffold (and RPC for fork
+  PASS) — see [poc-target-prerequisites.md](poc-target-prerequisites.md).
 
 ## Where the boundary is drawn
 

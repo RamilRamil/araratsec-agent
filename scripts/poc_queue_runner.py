@@ -47,7 +47,7 @@ from sr_agent.llm_core.openrouter_client import (
     OpenRouterClient,
     OpenRouterUnavailable,
 )
-from sr_agent.tools.sandbox import DockerSandbox, Mount, SandboxUnavailable
+from sr_agent.tools.sandbox import DockerSandbox, Mount, SandboxError, SandboxUnavailable
 from audit_agent.tools.write_execute import run_tests, write_poc
 from sr_agent.eval.tracer import NOOP_TRACER, Tracer
 
@@ -841,15 +841,17 @@ def _foundry_test_dir(project: Path) -> str:
 # _tracked_sol: imported from scripts.solidity_utils (feature 033)
 
 
-def resolve_scaffold(project: Path, spec: str, disabled: bool,
-                     target_stems: list[str] | None = None) -> list[Path]:
-    """Operator-provided scaffold file(s) (--test-scaffold / POC_SCAFFOLD), else
-    auto-discovery of the project's most-inherited PoC/test BASE. A scaffold is the
-    contest's shared deploy INFRASTRUCTURE, never a per-finding answer PoC - and
-    auto-discovery is restricted to git-TRACKED (original) files only."""
-    if disabled:
-        return []
-    out: list[Path] = []
+def _resolve_scaffold_tokens(project: Path, spec: str) -> tuple[list[Path], list[str]]:
+    """Resolve a comma-separated scaffold spec into (resolved files, unresolved tokens).
+
+    Single source of truth for token→path resolution (spec 001 VR-7/C9): consumed by
+    BOTH `resolve_scaffold`'s operator-override branch AND the `main()` pre-flight
+    check. If the two parsed tokens independently they could drift - a set-but-unresolved
+    operator scaffold accepted by one and rejected by the other would silently reopen
+    the denominator hole the pre-flight exists to close. A token is a file (absolute, or
+    project-relative) → resolved; otherwise it is unresolved (a typo / wrong path)."""
+    resolved: list[Path] = []
+    unresolved: list[str] = []
     for token in spec.split(","):
         token = token.strip()
         if not token:
@@ -857,7 +859,25 @@ def resolve_scaffold(project: Path, spec: str, disabled: bool,
         p = Path(token)
         p = p if p.is_absolute() else (project / token)
         if p.is_file():
-            out.append(p.resolve())
+            resolved.append(p.resolve())
+        else:
+            unresolved.append(token)
+    return resolved, unresolved
+
+
+def resolve_scaffold(project: Path, spec: str, disabled: bool,
+                     target_stems: list[str] | None = None) -> list[Path]:
+    """Operator-provided scaffold file(s) (--test-scaffold / POC_SCAFFOLD), else
+    auto-discovery of the project's most-inherited PoC/test BASE. A scaffold is the
+    contest's shared deploy INFRASTRUCTURE, never a per-finding answer PoC - and
+    auto-discovery is restricted to git-TRACKED (original) files only.
+
+    An operator spec whose tokens do not resolve is NOT handled here: the `main()`
+    pre-flight (feature spec 001 FR-011) rejects a set-but-unresolved operator scaffold
+    before the run, so by the time this runs, a non-empty operator spec has resolved."""
+    if disabled:
+        return []
+    out, _unresolved = _resolve_scaffold_tokens(project, spec)
     if out:
         return out
     tracked = _tracked_sol(project)
@@ -879,6 +899,26 @@ def resolve_scaffold(project: Path, spec: str, disabled: bool,
         if deff is not None:
             return [deff.resolve()]
     return []
+
+
+def _preflight_operator_scaffold(project: Path, spec: str) -> None:
+    """Feature spec 001 FR-011: a configured-but-unresolved operator scaffold
+    (`--test-scaffold` / `POC_SCAFFOLD`) is a whole-run configuration error, not a
+    per-finding environment gap. Abort the run naming the bad path(s) rather than
+    silently falling through to auto-discovery (which could substitute a DIFFERENT base)
+    or to the per-finding `base-insufficient` terminal (which would shrink the model
+    denominator run-wide behind a false 'no operator scaffold' reason). Strict: ANY
+    unresolved configured token aborts (partial-drop is caught too). Uses the SAME
+    resolver as `resolve_scaffold` (VR-7/C9) so the pre-flight and the loop cannot drift.
+    Empty spec (no operator scaffold) is a no-op - auto-discovery is legitimate then."""
+    if not spec.strip():
+        return
+    _resolved, unresolved = _resolve_scaffold_tokens(project, spec)
+    if unresolved:
+        print("operator scaffold path(s) do not resolve to a file: " + ", ".join(unresolved)
+              + "\n(point --test-scaffold / POC_SCAFFOLD at an existing base, or unset it to "
+                "use auto-discovery)", file=sys.stderr)
+        sys.exit(2)
 
 
 # _SCAFFOLD_CONTRACT_RE, _SCAFFOLD_IS_RE, _scaffold_base_name: imported from
@@ -935,8 +975,14 @@ def scaffold_missing_types(scaffold: str, target_stems: list[str],
     (`DemoProtocolDeploymentBase`) deploys `ERC20Stub` but declares no
     `DemoCooldown` at all - H-01 needs `DemoCooldown`-specific behavior
     (`cancel()` with `TDemoGuard`, `setDemoBounds`). Six live attempts were
-    spent before this was noticed by hand. DIAGNOSTIC ONLY (logged, not gating): a
-    false positive here must not block a run that could otherwise succeed.
+    spent before this was noticed by hand.
+
+    GATING (feature 040 FR-011): a non-empty result now GATES the finding - drafting on a
+    known-insufficient base is disallowed. The call site escalates (synthesize an extension
+    base, then the insufficiency ladder → `base-insufficient` / `lookup_failed`) instead of
+    drafting. This is NOT the earlier "diagnostic only, never blocks" behavior; the docstring
+    was corrected under spec 001 to match the call site. (The AST path below keeps false
+    positives rare so the gate is trustworthy.)
 
     With `symbol_index` (feature 009 US3), resolution is AST-backed and
     INHERITANCE-AWARE: the scaffold's own declarations come from parsing its source
@@ -2682,6 +2728,29 @@ def _process_finding(
     # finding's own name so it's never the answer.
     target_stems = _location_names(task["location"])
     scaffold_paths = resolve_scaffold(args.project, args.test_scaffold, args.no_scaffold, target_stems)
+
+    # Feature spec 001 (FR-001..004a): a NON-deliberate absent deploy base is an
+    # environment gap, not a model miss. When scaffolding was not deliberately disabled
+    # (`--no-scaffold`) yet nothing resolved, short-circuit to the environment terminal
+    # `base-insufficient` (harness-infra, excluded from the model denominator) BEFORE the
+    # missing-type gate and its lookup ladder (which, with an index + budget > 0, would
+    # misclassify this as a model-column `lookup_failed`), and before the wasteful
+    # example / callable-API reads. The deliberate `--no-scaffold` ablation deliberately
+    # falls through to draft on "(no base provided)" so its findings stay in the model
+    # column (FR-004) - the discriminator is `args.no_scaffold`, never the empty state,
+    # which is identical in both. A set-but-unresolved operator scaffold never reaches
+    # here: the main() pre-flight (FR-011) rejects it, so this reason is true by construction.
+    if not args.no_scaffold and not scaffold_paths:
+        log({"event": "scaffold_absent", "finding_id": fid,
+             "reason": "no deploy base could be resolved (auto-discovery empty, no operator "
+                       "scaffold configured) and scaffolding was not deliberately disabled - "
+                       "an environment gap, not a model miss (FR-001)"})
+        outcome = "base-insufficient"
+        log({"event": "task_done", "finding_id": fid, "outcome": outcome,
+             "elapsed_s": round(time.time() - started, 1),
+             **_terminal_fields("finding_attempt", _finding_cause(outcome))})
+        return outcome
+
     scaffold = read_scaffold(args.project, scaffold_paths)
     inventory = _refresh_scaffold_inventory(scaffold_paths, args.project, log, fid)
     example_path = resolve_example(args.project, args.example_poc, args.no_example,
@@ -2757,6 +2826,19 @@ def _process_finding(
             log({"event": "draft_failed", "finding_id": fid, "error": str(e),
                  **_terminal_fields("finding_attempt", _finding_cause("draft_failed"))})
             return "draft_failed"
+        except SandboxUnavailable as e:
+            # The loop's own run_poc could not reach the sandbox. Mirror the non-loop attempt
+            # loop (~line 2900): harness-infra, not a model miss - close the finding, keep going.
+            log({"event": "sandbox_unavailable", "finding_id": fid, "reason": str(e),
+                 **_terminal_fields("finding_attempt", _finding_cause("sandbox_unavailable"))})
+            return "sandbox_unavailable"
+        except SandboxError as e:
+            # SandboxTimeout (the 1200s fork-run cap) and any other sandbox error raised from the
+            # loop's run_poc previously propagated UNCAUGHT and killed the whole shard, losing every
+            # sibling finding. Close this ONE finding as run_error (harness-infra); the queue moves on.
+            log({"event": "run_error", "finding_id": fid, "error": str(e),
+                 **_terminal_fields("finding_attempt", _finding_cause("run_error"))})
+            return "run_error"
         if not code.strip():
             log({"event": "draft_failed", "finding_id": fid, "error": "agentic loop produced no Solidity",
                  **_terminal_fields("finding_attempt", _finding_cause("draft_failed"))})
@@ -3207,6 +3289,10 @@ def main() -> None:
                          "material). Removes the report channel's ceiling - works for any finding, "
                          "including leads that never carry a report fix.")
     args = ap.parse_args()
+
+    # Feature spec 001 FR-011: reject a set-but-unresolved operator scaffold up front
+    # (whole-run config error) before any finding is processed - see _preflight_operator_scaffold.
+    _preflight_operator_scaffold(args.project, args.test_scaffold)
 
     operator_patches = _parse_fix_patches(args.fix_patch)
 

@@ -12,12 +12,14 @@ bug this class surfaced in this session's live runs would have been caught here)
 from __future__ import annotations
 
 import json
+import sys
 import types
 from pathlib import Path
 
 import pytest
 
 import scripts.poc_queue_runner as pqr
+from scripts.solidity_index import SymbolIndex
 from sr_agent.eval.tracer import NOOP_TRACER
 from audit_agent.tools.write_execute import TestResult as _ForgeResult
 
@@ -497,3 +499,163 @@ def test_generation_records_prompt_version(tmp_path):
     assert prov["poc-draft"] == 3                     # fetched version recorded
     assert prov["poc-exploit-checklist"] is None      # fallback-sourced → None
     assert prov["poc-lookup-marker"] is None
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Feature spec 001 — honest handling & labeling of missing PoC scaffold prerequisites.
+# Absent-base environment terminal (US1) + FR-011 pre-flight abort. Contract clauses
+# C1–C10 in specs/001-missing-scaffold-honesty/contracts/absent-base-terminal.md.
+# ══════════════════════════════════════════════════════════════════════════════
+def _args_scaffold(project: Path, *, no_scaffold: bool, test_scaffold: str = "",
+                   lookup_budget: int = 0) -> types.SimpleNamespace:
+    """Like _args but lets a test choose the ablation flag / operator scaffold / budget."""
+    return types.SimpleNamespace(
+        project=project, test_scaffold=test_scaffold, no_scaffold=no_scaffold,
+        no_example=True, example_poc="", no_file_map=True, lookup_budget=lookup_budget,
+        attempts=3, image=None, no_scaffold_synthesis=False,
+    )
+
+
+def _process(task, project, *, args, monkeypatch, symbol_index=None, forbid_draft=True):
+    """Drive _process_finding with drafting FORBIDDEN by default (asserts the absent-base
+    path never reaches the model). Returns (outcome, events)."""
+    if forbid_draft:
+        def _no_draft(*a, **k):
+            raise AssertionError("draft() must not be called on the absent-base path")
+        monkeypatch.setattr(pqr, "draft", _no_draft)
+    events: list[dict] = []
+    outcome = pqr._process_finding(
+        task, args=args, client=object(), sandbox=object(), log=events.append,
+        symbol_index=symbol_index, file_map="", protocol_mode="marker", fork_rpc=None,
+        require_pass_effective=False, poc_dir=project / "audit" / "poc", tracer=NOOP_TRACER)
+    return outcome, events
+
+
+def test_absent_base_emits_environment_terminal(tmp_path, monkeypatch):
+    """C1 + C5/VR-5: no deliberate disable + nothing resolved ⇒ base-insufficient
+    (harness-infra), no draft, and a scaffold_absent breadcrumb whose reason is distinct
+    from the missing-type scaffold_insufficient event."""
+    outcome, events = _process(TASK, tmp_path, args=_args_scaffold(tmp_path, no_scaffold=False),
+                               monkeypatch=monkeypatch)
+    assert outcome == "base-insufficient"
+    names = _evnames(events)
+    assert "scaffold_absent" in names
+    assert "scaffold_insufficient" not in names            # C5: distinct event
+    assert "written" not in names and "tested" not in names  # no draft attempt
+    done = events[-1]
+    assert done["event"] == "task_done" and done["outcome"] == "base-insufficient"
+    assert done["nature"] == "harness-infra"               # excluded from model denominator
+    absent = next(e for e in events if e["event"] == "scaffold_absent")
+    assert "no operator scaffold" in absent["reason"]
+
+
+def test_absent_base_short_circuits_before_ladder(tmp_path, monkeypatch):
+    """C2 / FR-004a: even with a symbol index present and lookup_budget > 0, the absent
+    base returns base-insufficient and NEVER lookup_failed — the lookup ladder must not run."""
+    idx = SymbolIndex.build(tmp_path)  # a present (non-None) index
+    outcome, events = _process(
+        TASK, tmp_path, args=_args_scaffold(tmp_path, no_scaffold=False, lookup_budget=5),
+        monkeypatch=monkeypatch, symbol_index=idx)
+    assert outcome == "base-insufficient"
+    assert outcome != "lookup_failed"
+    assert "lookup" not in _evnames(events)                # ladder never consulted
+
+
+def test_no_scaffold_ablation_stays_model_column(tmp_path, monkeypatch):
+    """C3 / FR-004: deliberate --no-scaffold drafts normally (model column) and emits NO
+    scaffold_absent event, despite the identical empty-scaffold state."""
+    outcome, events = _run(TASK, tmp_path, drafts=[REAL], fixes=[], results=[_PASS],
+                           monkeypatch=monkeypatch)  # _args → no_scaffold=True
+    assert outcome != "base-insufficient"
+    assert "scaffold_absent" not in _evnames(events)
+    assert "tested" in _evnames(events)                    # it really drafted
+
+
+def test_unresolved_operator_scaffold_aborts_preflight(tmp_path, capsys):
+    """C8 / FR-011: a set-but-unresolved --test-scaffold aborts (exit 2) naming the path."""
+    with pytest.raises(SystemExit) as ei:
+        pqr._preflight_operator_scaffold(tmp_path, "test/DoesNotExist.sol")
+    assert ei.value.code == 2
+    assert "DoesNotExist.sol" in capsys.readouterr().err
+
+
+def test_preflight_ok_when_resolvable_and_noop_when_empty(tmp_path):
+    """C8 boundary: a resolvable path and an empty spec both pass without aborting."""
+    base = tmp_path / "Base.sol"
+    base.write_text("pragma solidity ^0.8.28;\ncontract Base {}", encoding="utf-8")
+    pqr._preflight_operator_scaffold(tmp_path, str(base))  # no raise
+    pqr._preflight_operator_scaffold(tmp_path, "")         # no raise (auto-discovery legit)
+
+
+def test_preflight_and_loop_share_one_resolver(tmp_path, monkeypatch):
+    """C9 / VR-7: both resolve_scaffold and the pre-flight route token resolution through
+    the single _resolve_scaffold_tokens helper — pinned so a future parser change can't
+    make them disagree."""
+    calls: list[str] = []
+    real = pqr._resolve_scaffold_tokens
+
+    def _spy(project, spec):
+        calls.append(spec)
+        return real(project, spec)
+    monkeypatch.setattr(pqr, "_resolve_scaffold_tokens", _spy)
+    base = tmp_path / "Base.sol"
+    base.write_text("pragma solidity ^0.8.28;\ncontract Base {}", encoding="utf-8")
+    pqr.resolve_scaffold(tmp_path, str(base), False)
+    pqr._preflight_operator_scaffold(tmp_path, str(base))
+    assert calls.count(str(base)) == 2                     # both went through the one resolver
+
+
+def test_poc_scaffold_env_route_aborts_preflight(tmp_path, monkeypatch):
+    """C10: the POC_SCAFFOLD env var is the argparse default of --test-scaffold, so a bad
+    env path aborts at the same pre-flight — exercised through main() end-to-end."""
+    report = tmp_path / "report.md"
+    report.write_text("# report\n", encoding="utf-8")
+    monkeypatch.setenv("POC_PROJECT", str(tmp_path))
+    monkeypatch.setenv("POC_REPORT", str(report))
+    monkeypatch.setenv("POC_SCAFFOLD", str(tmp_path / "nope" / "Bad.sol"))
+    monkeypatch.setattr(sys, "argv", ["poc_queue_runner"])
+    # _process_finding must never run — the abort precedes the loop.
+    monkeypatch.setattr(pqr, "_process_finding",
+                        lambda *a, **k: pytest.fail("pre-flight must abort before the loop"))
+    with pytest.raises(SystemExit) as ei:
+        pqr.main()
+    assert ei.value.code == 2
+
+
+def test_lookup_failed_finding_is_model_column(tmp_path, monkeypatch):
+    """SC-003 part A: a finding whose scaffold is PRESENT but missing a needed type,
+    with synthesis skipped and a lookup budget, terminates as `lookup_failed` (nature
+    model) — the model-column miss that MUST stay in the denominator, contrasted with the
+    absent-base environment terminal."""
+    td = tmp_path / pqr._foundry_test_dir(tmp_path)
+    td.mkdir(parents=True, exist_ok=True)
+    scaffold = td / "Base.sol"
+    scaffold.write_text("pragma solidity ^0.8.28;\ncontract Base { address alice; }", encoding="utf-8")
+    idx = SymbolIndex.build(tmp_path)
+    task = {"id": "M-1", "title": "needs a missing type", "location": "CooldownVault.cancel",
+            "description": "a bug"}
+    args = _args_scaffold(tmp_path, no_scaffold=False, test_scaffold=str(scaffold), lookup_budget=1)
+    args.no_scaffold_synthesis = True  # skip synth so the insufficiency ladder runs
+    outcome, events = _process(task, tmp_path, args=args, monkeypatch=monkeypatch, symbol_index=idx)
+    assert outcome == "lookup_failed"
+    done = events[-1]
+    assert done["event"] == "task_done" and done["outcome"] == "lookup_failed"
+    assert done["nature"] == "model"                          # retained in the model denominator
+
+
+def test_denominator_characterization(tmp_path, monkeypatch):
+    """SC-003 part B (anti-Goodhart, durable): over a stream carrying BOTH terminals, the
+    classifier keeps the absent-base finding OUT of the model column (harness-infra) while
+    RETAINING the lookup_failed finding IN it (model). Not an old-vs-new diff."""
+    import scripts.scaffold_taxonomy as tax
+    absent = {"run_id": "r1", "model": "m1", "terminal": True, "level": "finding_attempt",
+              "cause": "base-insufficient", "finding_id": "A-1", "event": "task_done"}
+    missed = {"run_id": "r1", "model": "m1", "terminal": True, "level": "finding_attempt",
+              "cause": "lookup_failed", "finding_id": "L-1", "event": "task_done"}
+    out = tax.classify([absent, missed], allow_truncated=True)
+    assert out["finding_counts"] == {"base-insufficient": 1, "lookup_failed": 1}
+    # the absent-base finding is charged to environment, the miss to the model:
+    assert out["nature_share"]["model"] > 0.0                 # lookup_failed retained
+    assert out["nature_share"]["harness-infra"] > 0.0         # base-insufficient charged to env
+    # and the model's share is exactly the lookup_failed one, not inflated by the env gap:
+    assert out["by_model"]["m1"]["finding"] == {"base-insufficient": 1, "lookup_failed": 1}

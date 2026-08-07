@@ -9,10 +9,27 @@ over Ollama and runs each PoC in the network-isolated sandbox.
 The target — its contracts, report, and generated PoCs — lives **entirely outside this
 repo** (`POC_PROJECT` / `POC_REPORT`); nothing target-specific is committed here.
 
+**Operator prerequisites (target-side harness, RPC, scaffold expectations):** see
+[../poc-target-prerequisites.md](../poc-target-prerequisites.md). The runner inherits the
+project's deploy base; it does not bootstrap a full protocol stack from an empty `test/`.
+
 ```mermaid
 flowchart TB
-    START["warm local model<br/>(Ollama, often a cloud-GPU tunnel)"] --> EX
-    EX["extract_tasks: the MODEL reads the report<br/>and composes its own finding list (no prefiltering)"] --> LOOP
+    START["warm local model<br/>(Ollama, often a cloud-GPU tunnel)"] --> PRE
+    PRE{"pre-flight: operator scaffold resolves?<br/>fork RPC set if --fork? model up?"}
+    PRE -->|"any unmet"| ABORT["ABORT run (exit 2)<br/>whole-run blocker — spec 001 FR-011"]
+    PRE -->|"ok"| EX
+    EX["extract_tasks: the MODEL reads the report<br/>and composes its own finding list (no prefiltering)"] --> SR
+
+    SR{"per finding: deploy base resolved?"}
+    SR -->|"no & --no-scaffold (ablation)"| GND
+    SR -->|"no & NOT disabled"| BINS["outcome = base-insufficient<br/>nature harness-infra — ENVIRONMENT,<br/>EXCLUDED from the model rate (spec 001)"]
+    SR -->|"yes"| MT{"scaffold declares the<br/>finding's needed type?"}
+    MT -->|"yes"| GND
+    MT -->|"no (gate: drafting on an<br/>insufficient base is DISALLOWED)"| SYN["synthesize_scaffold:<br/>extend the existing base (feature 011)"]
+    SYN -->|"compiles"| GND
+    SYN -->|"synth skipped/failed →<br/>lookup route could not run"| BINS
+    SYN -->|"synth skipped/failed →<br/>lookup RAN, model missed"| LF["outcome = lookup_failed<br/>nature model — RETAINED in the denominator"]
 
     subgraph LOOP["per finding — draft → compile → fix (N attempts, wall-clock budget)"]
         direction TB
@@ -28,6 +45,11 @@ flowchart TB
     GATE -->|"compiles + structurally real"| OK["outcome = compiled (path A)<br/>or passed if green (needs a mainnet fork)"]
     GATE -->|"attempts exhausted"| QUAR["quarantine non-compiling PoC"]
 ```
+
+The `base-insufficient` vs `lookup_failed` split is the honesty line: an **environment** gap
+(no resolvable/synthesizable base, or the lookup route could not run) leaves the model's
+denominator; a **model** miss (the lookup ran and the model still had no usable deployment)
+stays in it. See [../poc-target-prerequisites.md](../poc-target-prerequisites.md) §3.
 
 ## Reading this
 
@@ -46,6 +68,7 @@ flowchart TB
   **compiles and is structurally real** ("compiled"), and only a green `forge` run is
   "passed" (`--require-pass`). A pass with a vacuous/mocked test is rejected by the gate.
 
-See [../audit-agent.md](../audit-agent.md) for how PoC drafting relates to the audit
-pack, and [../research/cloud-gpu-hosting.md](../research/cloud-gpu-hosting.md) for
-hosting the local model on a metered cloud GPU.
+See [../poc-target-prerequisites.md](../poc-target-prerequisites.md) for the operator
+checklist before a run, [../audit-agent.md](../audit-agent.md) for how PoC drafting
+relates to the audit pack, and [../research/cloud-gpu-hosting.md](../research/cloud-gpu-hosting.md)
+for hosting the local model on a metered cloud GPU.

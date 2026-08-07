@@ -11,6 +11,7 @@ viewers.
   `OrchestratorLoop.run_turn` (DATA-wrapping, validate_action, escalation, OOB pause).
 - [poc-writing-flow.md](poc-writing-flow.md) — the current `scripts/poc_queue_runner.py`
   flow: the model extracts its own finding list, then draft → grounded → compile → fix.
+  Target-side harness/RPC checklist: [../poc-target-prerequisites.md](../poc-target-prerequisites.md).
 
 Update these when the wiring changes — a diagram that lies about what's connected is
 worse than no diagram.

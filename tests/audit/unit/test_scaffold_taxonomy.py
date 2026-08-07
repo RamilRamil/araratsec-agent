@@ -180,3 +180,24 @@ def test_classifier_imports_are_allowlisted():
     allowed = {"__future__", "argparse", "glob", "json", "collections",
                "scripts", "scripts.scaffold_causes"}
     assert imported <= allowed, f"unexpected imports (Principle IV): {imported - allowed}"
+
+
+# ── Feature spec 001 (R9): the new non-terminal `scaffold_absent` breadcrumb is
+# ignored by the classifier — terminal accounting and the queued==terminal_emitted
+# invariant are unaffected by its presence. ───────────────────────────────────────
+def test_classifier_ignores_scaffold_absent_event():
+    terminal = {"run_id": "r1", "model": "m1", "terminal": True, "level": "finding_attempt",
+                "cause": "base-insufficient", "finding_id": "F-1", "event": "task_done"}
+    absent = {"run_id": "r1", "model": "m1", "event": "scaffold_absent", "finding_id": "F-1",
+              "reason": "no operator scaffold configured"}
+    without = tax.classify([terminal])
+    with_absent = tax.classify([absent, terminal])
+    # R9: the non-terminal event changes NOTHING the classifier reports
+    assert with_absent == without
+    assert with_absent["queued"] == 1
+    assert with_absent["terminal_emitted"] == 1
+    assert with_absent["unattributed"] == 0                       # not a _LEGACY_SCAFFOLD event
+    # base-insufficient is charged to the environment column, never the model column:
+    assert with_absent["finding_counts"] == {"base-insufficient": 1}
+    assert with_absent["nature_share"]["harness-infra"] == 1.0
+    assert with_absent["nature_share"]["model"] == 0.0            # the model rate is untouched

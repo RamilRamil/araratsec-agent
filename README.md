@@ -95,6 +95,10 @@ Framework research (why we didn't use LangGraph, Mem0, Hermes, LangMem, NeMo Gua
 
 See [`specs/001-secure-memory-agent/quickstart.md`](specs/001-secure-memory-agent/quickstart.md) for full setup instructions.
 
+For the standalone PoC-workability runner (`scripts/poc_queue_runner.py`), agent setup is
+not enough: the **analyzed** Foundry project must already expose a deploy/PoC scaffold
+(and archive RPC for fork PASS). See [`docs/poc-target-prerequisites.md`](docs/poc-target-prerequisites.md).
+
 ```bash
 cp .env.example .env
 # Fill in ANTHROPIC_API_KEY and generate SR_SECRET_KEY:
