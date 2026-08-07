@@ -15,6 +15,7 @@ dependencies = [
     # Audit-only dependencies (NOT in the kernel):
     "web3>=7.0.0",          # on-chain reads
     "docker>=7.0.0",        # sandbox containers
+    "solidity-parser>=0.1.1",  # AST grounding in scripts/solidity_index.py
     # Kernel-provided libraries used directly by audit code (declared for clarity;
     # also pulled transitively by secure-agent-kernel):
     "anthropic>=0.40.0",
