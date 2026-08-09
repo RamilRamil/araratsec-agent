@@ -50,7 +50,7 @@ def _legacy_text(sigs=""):
     """Exactly what the entry emits today, reproduced here so a drift is a red test."""
     if sigs:
         return f"`DemoVault` has NO member `vaultKeeper`. Use only its real functions:\n{sigs}"
-    return "`DemoVault` has no member `vaultKeeper` — use a real function from [callable_api]."
+    return "`DemoVault` has no member `vaultKeeper` - use a real function from [callable_api]."
 
 
 def test_commented_out_declaration_is_not_evidence():
