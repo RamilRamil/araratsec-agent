@@ -8,7 +8,7 @@ import json
 import pytest
 from pathlib import Path
 
-from sr_agent.models.action import Action, ActionType
+from sr_agent.models.action import Action
 from sr_agent.orchestrator.confirmation import (
     ConfirmationStatus,
     check_confirmation,
@@ -24,7 +24,7 @@ def confirmations_dir(tmp_path: Path) -> Path:
 
 
 def _write_poc_action() -> Action:
-    return Action(action_type=ActionType.write_poc, params={"finding_id": "HIGH-001"})
+    return Action(action_type="write_poc", params={"finding_id": "HIGH-001"})
 
 
 def test_irreversible_pauses(confirmations_dir):

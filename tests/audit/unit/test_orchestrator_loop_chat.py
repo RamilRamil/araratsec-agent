@@ -41,7 +41,7 @@ def _loop(tmp_path, provider):
         audit_session, memory, tmp_path,
         pack=AUDIT_PACK, reasoning_provider=provider,
         confirmations_dir=tmp_path / "conf",
-        sandbox=FakeSandbox(), poc_dir=tmp_path / "audit" / "poc",
+        sandbox=FakeSandbox(),
     )
     return loop, memory
 
@@ -79,11 +79,11 @@ def test_execute_confirmed_is_the_only_run_path(tmp_path):
     # execute_confirmed is what actually runs an approved action; run_turn's gate
     # is the only thing that reaches it (via the CLI resume path). Calling it is a
     # deliberate post-approval step — there is no in-turn shortcut to it.
-    from sr_agent.models.action import Action, ActionType
+    from sr_agent.models.action import Action
 
     aa = AgentAction(next_action="write_poc", tool_params={"finding_id": "F1"})
     loop, _ = _loop(tmp_path, FakeProvider(ReasoningOutcome(kind="action", agent_action=aa, tier="local")))
     # A turn only ever pauses (proven above). Executing requires an explicit call.
-    summary, event = loop.execute_confirmed(Action(action_type=ActionType.write_poc, params={"finding_id": "F1"}))
+    summary, event = loop.execute_confirmed(Action(action_type="write_poc", params={"finding_id": "F1"}))
     assert event is not None and event.status == "written"
     assert list((tmp_path / "audit" / "poc").glob("*.t.sol"))

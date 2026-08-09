@@ -27,7 +27,7 @@ def test_repo_url_binds_session_to_external_workspace(mgr, tmp_path, monkeypatch
     (workspace / "src").mkdir(parents=True)
     monkeypatch.setattr(sessions, "clone_repo", lambda url, root, token="": workspace)
     s = mgr.start(repo_url="https://github.com/org/repo.git")
-    assert s.loop._audit_root == workspace.resolve()
+    assert s.loop._scope_root == workspace.resolve()
     assert _AGENT_ROOT not in workspace.resolve().parents   # external to the agent repo
 
 

@@ -108,7 +108,7 @@ def resume_confirmation(loop, session, memory) -> str:
     (the ONLY path that runs it — approval never happens in a model turn). Records
     a mechanical PoC status event (never a verdict). Rejected/timeout → not executed.
     """
-    from sr_agent.models.action import Action, ActionType
+    from sr_agent.models.action import Action
     from sr_agent.orchestrator.action import validate_action
     from sr_agent.orchestrator.chat_session import record_poc_status, save_session, update_facts
     from sr_agent.orchestrator.confirmation import load_request
@@ -132,8 +132,8 @@ def resume_confirmation(loop, session, memory) -> str:
         return f"confirmation {cid} was {status} — action not executed."
 
     # Approved: rebuild + re-validate the action, then execute out-of-band-gated.
-    action = Action(action_type=ActionType(payload["action_type"]), params=payload.get("params", {}))
-    validate_action(action, loop._audit_root, loop._pack)   # re-annotate class/reversibility
+    action = Action(action_type=payload["action_type"], params=payload.get("params", {}))
+    validate_action(action, loop._scope_root, loop._pack)   # re-annotate class/reversibility
     action.human_confirmation = True
     summary, event = loop.execute_confirmed(action)
     if event is not None:

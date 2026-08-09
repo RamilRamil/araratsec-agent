@@ -45,7 +45,7 @@ def _setup(tmp_path):
         audit_session, memory, tmp_path,
         pack=AUDIT_PACK, reasoning_provider=FakeProvider(ReasoningOutcome(kind="action", agent_action=aa, tier="local")),
         confirmations_dir=tmp_path / "conf",
-        sandbox=FakeSandbox(), poc_dir=tmp_path / "audit" / "poc",
+        sandbox=FakeSandbox(),
     )
     return loop, session, memory
 
