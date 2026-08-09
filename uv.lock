@@ -237,7 +237,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.31.0" },
     { name = "rich", specifier = ">=13.7.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
-    { name = "secure-agent-kernel", git = "https://github.com/RamilRamil/secure-agent-kernel.git?rev=v0.2.0" },
+    { name = "secure-agent-kernel", git = "https://github.com/RamilRamil/secure-agent-kernel.git?rev=v0.3.0" },
     { name = "solidity-parser", specifier = ">=0.1.1" },
     { name = "web3", specifier = ">=7.0.0" },
 ]
@@ -2062,8 +2062,8 @@ wheels = [
 
 [[package]]
 name = "secure-agent-kernel"
-version = "0.2.0"
-source = { git = "https://github.com/RamilRamil/secure-agent-kernel.git?rev=v0.2.0#1118670f4c47af48b6a0db8e924845901622baa9" }
+version = "0.3.0"
+source = { git = "https://github.com/RamilRamil/secure-agent-kernel.git?rev=v0.3.0#25cd4cd3602208b2bca1c7be2edc1697ed2eca0a" }
 dependencies = [
     { name = "anthropic" },
     { name = "click" },

@@ -32,8 +32,8 @@ jobs:
 
       # The kernel (secure-agent-kernel) is a PUBLIC dependency, pinned by git
       # URL in pyproject.toml, so the git clone needs no auth — pip resolves the
-      # @v0.2.0 pin over anonymous https.
-      - name: Install (kernel resolved from the @v0.2.0 git pin)
+      # @v0.3.0 pin over anonymous https.
+      - name: Install (kernel resolved from the @v0.3.0 git pin)
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
