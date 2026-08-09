@@ -1,6 +1,6 @@
 """Eval runner — recall / FPR / loop-completion over EVAL_CASES (T082).
 
-Runs each `EvalCase` through the real `sr_agent.orchestrator.pipeline` audit
+Runs each `EvalCase` through the real `audit_agent.pipeline` audit
 (Stage 1 SIG planning + local-model Stage 2 — relay is interactive and can't
 run headlessly in a batch eval), then scores the resulting findings against
 that case's ground truth. All metrics are deterministic Python, never
@@ -39,9 +39,9 @@ from pathlib import Path
 from eval.dataset import EVAL_CASES, EvalCase, EvalCriterion
 from sr_agent.llm_core.local_client import LocalClient
 from sr_agent.memory.episodic import EpisodicMemory
-from sr_agent.models.audit import AuditInput, Principal
-from sr_agent.models.finding import Finding, Severity
-from sr_agent.orchestrator.pipeline import start_audit
+from audit_agent.session import AuditInput, Principal
+from audit_agent.finding import Finding, Severity
+from audit_agent.pipeline import start_audit
 
 logger = logging.getLogger(__name__)
 
