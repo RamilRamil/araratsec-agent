@@ -1,10 +1,25 @@
+---
+type: Reference
+title: The Audit Agent — first capability pack
+description: How the audit CapabilityPack plugs into the secure-agent-kernel, what it adds, and how it is constrained.
+tags: [audit-agent, capability-pack, kernel, architecture]
+lang: en
+status: stable
+generated:
+  by: human:ramilmustafin
+  at: 2026-08-07T21:02:02+04:00
+sources:
+  - resource: audit_agent/pack.py
+    title: AUDIT_PACK assembly
+---
+
 # The Audit Agent — the first capability pack
 
 The audit agent is **not** a separate program; it is a **capability pack** that plugs
 the kernel into one task: smart-contract security auditing. Everything task-specific
 lives under `sr_agent/packs/audit/` and reaches the kernel through the single
-[`CapabilityPack`](kernel.md#the-capabilitypack-interface) interface. Remove the pack
-and the [kernel](kernel.md) still stands, task-agnostic; swap in a different pack and
+[`CapabilityPack`](https://github.com/RamilRamil/secure-agent-kernel) interface. Remove the pack
+and the [kernel](https://github.com/RamilRamil/secure-agent-kernel) still stands, task-agnostic; swap in a different pack and
 the same security guarantees apply to a different domain.
 
 Its purpose is twofold: **do the audit work**, and by doing it, **demonstrate that the
@@ -42,7 +57,7 @@ leaking someone else's code into it.
 
 ## What it needs to run
 
-Everything the [kernel needs](kernel.md#what-it-needs-to-run), plus:
+Everything the [kernel needs](https://github.com/RamilRamil/secure-agent-kernel), plus:
 
 - **Docker images** for the analysis/execution tools — `docker/Dockerfile.{slither,
   mythril,foundry}` (the Foundry image bakes `solc` so PoCs compile offline under
@@ -85,6 +100,6 @@ Two other surfaces drive the same pack:
 
 ## Where the boundary is drawn
 
-See [kernel.md](kernel.md) for the invariants and the `CapabilityPack` interface, and
+See [the secure-agent-kernel repo](https://github.com/RamilRamil/secure-agent-kernel) for the invariants and the `CapabilityPack` interface, and
 `specs/004-kernel-pack-boundary/` for how the audit-specifics were extracted behind it
 (the architecture test asserts the kernel imports zero pack modules).

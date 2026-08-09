@@ -1,3 +1,18 @@
+---
+type: Reference
+title: Eval / verification principles for generated artifacts
+description: Positive-signal verdicts, second-signal corroboration, and operator SOPs against false positives.
+tags: [eval, verification, false-positives, mutation-verify, operator-sop]
+lang: en
+status: stable
+generated:
+  by: human:ramilmustafin
+  at: 2026-08-07T14:06:34+04:00
+sources:
+  - resource: scripts/poc_queue_runner.py
+    title: PoC-workability harness (_compiled / mutation_verify)
+---
+
 # Eval / verification principles for generated artifacts
 
 How this project verifies whether an automated check over an LLM-or-tool-generated
@@ -8,7 +23,7 @@ verdict was wrong with full confidence, and nothing about running it raised a fl
 
 This is a general engineering practice for tooling, distinct from and lighter-weight
 than the kernel's security invariants (Principle I, `tests/security/`) — see
-[kernel.md](kernel.md) for those. This document applies wherever this project (kernel,
+[the secure-agent-kernel repo](https://github.com/RamilRamil/secure-agent-kernel) for those. This document applies wherever this project (kernel,
 any capability pack, or standalone tooling like the PoC-workability harness) writes an
 automated check that produces a success/failure verdict.
 

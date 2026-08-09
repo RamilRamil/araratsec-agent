@@ -1,15 +1,32 @@
+---
+type: Diagram
+title: Architecture overview — kernel, pack, and surfaces
+description: Module map — the task-agnostic kernel, the audit pack, and the composition roots that drive them.
+tags: [architecture, kernel, capability-pack, diagram]
+lang: en
+status: stable
+generated:
+  by: human:ramilmustafin
+  at: 2026-08-07T14:06:34+04:00
+sources:
+  - resource: audit_agent/pack.py
+    title: AUDIT_PACK
+  - resource: sr_agent/orchestrator/loop.py
+    title: OrchestratorLoop
+---
+
 # Architecture overview — kernel, pack, and the surfaces that drive them
 
 What is actually wired up today, after the **kernel ↔ capability-pack split**
 (spec 004) and the **operator frontend** (spec 005). Two composition roots (the CLI
-and the frontend) build the same task-agnostic [kernel](../kernel.md) and hand it the
+and the frontend) build the same task-agnostic [kernel](https://github.com/RamilRamil/secure-agent-kernel) and hand it the
 [audit pack](../audit-agent.md). A standalone script drives the PoC-writing experiment
 outside the loop.
 
 ```mermaid
 flowchart TB
     subgraph ROOTS["Composition roots"]
-        CLI["sr_agent/cli.py<br/>chat · confirm · relay · memory · audit"]
+        CLI["audit_agent/cli.py<br/>chat · confirm · relay · memory · audit"]
         FE["frontend/backend/app.py<br/>FastAPI + Svelte operator console"]
     end
 
@@ -21,11 +38,11 @@ flowchart TB
         PACKIF["orchestrator/pack.py<br/>CapabilityPack + PackContext"]
         GUARD["guardrails/{sanitize,escalation}<br/>generic triggers"]
         MEM["memory/episodic.py<br/>HMAC append-only, SourceType"]
-        LLM["llm_core/{local_client,chat_reasoning,<br/>relay,router,claude_client}"]
+        LLM["llm_core/{local_client,claude_client,gemini_client,<br/>openrouter_client,router,chat_reasoning}"]
         SAND["tools/sandbox.py<br/>--network none ephemeral"]
     end
 
-    subgraph PACK["sr_agent/packs/audit — the audit capability pack"]
+    subgraph PACK["audit_agent — the audit capability pack"]
         APACK["pack.py → AUDIT_PACK"]
         ADISP["dispatch.py · reasoning.py · escalation.py"]
         APIPE["pipeline.py · planner/ (stage1-3)"]

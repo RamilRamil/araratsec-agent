@@ -1,3 +1,18 @@
+---
+type: Diagram
+title: PoC-writing flow — poc_queue_runner
+description: The inner draft → grounded → compile → fix loop of the PoC-workability runner.
+tags: [poc, diagram, draft-loop, foundry]
+lang: en
+status: stable
+generated:
+  by: human:ramilmustafin
+  at: 2026-08-07T21:02:02+04:00
+sources:
+  - resource: scripts/poc_queue_runner.py
+    title: PoC queue runner
+---
+
 # PoC-writing flow — `scripts/poc_queue_runner.py`
 
 The **PoC-workability experiment**: can a local model, driven by good honest
