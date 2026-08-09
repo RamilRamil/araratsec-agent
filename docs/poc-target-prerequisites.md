@@ -1,3 +1,18 @@
+---
+type: Playbook
+title: PoC target prerequisites (operator SOP)
+description: What the analyzed Foundry project must expose before the PoC runner can draft and fork-verify PoCs.
+tags: [poc, operator-sop, scaffold, foundry, prerequisites]
+lang: en
+status: stable
+generated:
+  by: human:ramilmustafin
+  at: 2026-08-07T21:02:02+04:00
+sources:
+  - resource: scripts/poc_queue_runner.py
+    title: resolve_scaffold / scaffold_missing_types / synthesize_scaffold
+---
+
 # PoC target prerequisites (operator SOP)
 
 What must already exist on the **analyzed Foundry project** (`POC_PROJECT`) before

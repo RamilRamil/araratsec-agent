@@ -11,6 +11,7 @@ from pathlib import Path
 
 import scripts.poc_queue_runner as pqr
 from sr_agent.eval.tracer import NOOP_TRACER
+from sr_agent.tools.sandbox import SandboxTimeout
 from audit_agent.tools.write_execute import TestResult as _ForgeResult
 
 TASK = {"id": "X-01", "title": "example finding", "location": "", "description": "a bug"}
@@ -60,6 +61,39 @@ def test_agentic_wire_reads_then_hands_final_code_to_the_oracle_once(tmp_path, m
     # fix() is never reached under the agentic branch (effective_attempts == 1)
     assert "stall_detected" not in names and "targeted_hints" not in names
     assert outcome  # a terminal outcome was produced by the unchanged oracle path
+
+
+def test_agentic_loop_sandbox_timeout_closes_run_error_not_crash(tmp_path, monkeypatch):
+    """A SandboxTimeout from the loop's OWN run_poc must close the finding as `run_error`
+    (harness-infra), NOT propagate and crash the whole shard — which lost every sibling
+    finding in run full23_luna_loop_c10_m18 shard1 (exit code 1 mid-L-05, L-06/L-07 never ran).
+    Mirrors the non-loop attempt-loop's timeout handling (poc_queue_runner.py ~2829)."""
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "C.sol").write_text("contract C { uint256 public x = 1; }\n")
+    (tmp_path / "audit" / "poc").mkdir(parents=True)
+
+    # scripted model reaches the loop's run_poc (READ -> code); run_poc then times out.
+    client = FakeClient(["READ: " + str(tmp_path / "src" / "C.sol"), REAL])
+
+    def _timeout(*a, **k):
+        raise SandboxTimeout("Sandbox exceeded 1200.0s")
+
+    monkeypatch.setattr(pqr, "run_tests", _timeout)
+
+    events: list[dict] = []
+    outcome = pqr._process_finding(                       # must return, not raise
+        TASK, args=_args(tmp_path), client=client, sandbox=object(),
+        log=events.append, symbol_index=None, file_map="", protocol_mode="marker",
+        fork_rpc=None, require_pass_effective=False, poc_dir=tmp_path / "audit" / "poc",
+        tracer=NOOP_TRACER,
+    )
+
+    assert outcome == "run_error"
+    ev = {e["event"]: e for e in events}
+    assert "run_error" in ev, [e["event"] for e in events]
+    # the finding closes with a harness-infra terminal — never charged to the model column.
+    assert ev["run_error"].get("terminal") is True
+    assert ev["run_error"].get("cause") == "unclassified"
 
 
 def test_flag_off_uses_draft_not_the_wire(tmp_path, monkeypatch):

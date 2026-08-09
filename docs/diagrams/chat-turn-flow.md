@@ -1,6 +1,21 @@
+---
+type: Diagram
+title: Chat turn flow — sr-agent chat
+description: One turn of OrchestratorLoop.run_turn — DATA-wrapping, validate_action, escalation, OOB pause.
+tags: [chat, orchestrator, diagram, sequence]
+lang: en
+status: stable
+generated:
+  by: human:ramilmustafin
+  at: 2026-08-07T14:06:34+04:00
+sources:
+  - resource: sr_agent/orchestrator/loop.py
+    title: OrchestratorLoop.run_turn
+---
+
 # Chat turn flow — `sr-agent chat` (feature 003)
 
-One turn of the interactive chat loop, through `OrchestratorLoop.run_turn`. Local-first, no paid API. The loop is the task-agnostic [kernel](../kernel.md); the tool dispatch, domain escalation, and finding persistence shown below are supplied by the [audit pack](../audit-agent.md) through its `CapabilityPack` (the kernel keeps the control flow + every invariant). Same DATA-wrapping / `validate_action` / out-of-band confirmation on any surface (CLI or the operator frontend).
+One turn of the interactive chat loop, through `OrchestratorLoop.run_turn`. Local-first, no paid API. The loop is the task-agnostic [kernel](https://github.com/RamilRamil/secure-agent-kernel); the tool dispatch, domain escalation, and finding persistence shown below are supplied by the [audit pack](../audit-agent.md) through its `CapabilityPack` (the kernel keeps the control flow + every invariant). Same DATA-wrapping / `validate_action` / out-of-band confirmation on any surface (CLI or the operator frontend).
 
 ```mermaid
 sequenceDiagram
