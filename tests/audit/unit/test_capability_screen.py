@@ -104,10 +104,14 @@ def test_a5_cheap_first_ordering(placeholder_battery, prereg_record, scripted):
 
 # ── A6 / SC-005 - oracle byte-unchanged, no redefinition ──────────────────────
 
-# Feature 040 SC-008 / T036: pin the 037/038 oracle source hash. 040 touches grounding/
-# emission only - any drift here means mutation_verify/_poc_defects were edited (FR-014).
+# Feature 040 SC-008 / T036: pin the oracle source hash. Any drift here means
+# mutation_verify/_poc_defects were edited (FR-014) — a deliberate change must
+# re-baseline this pin. Re-baselined 2026-08-09: the poc-runner honesty feature (#1)
+# legitimately edited those functions; the dynamic invariant (test_a6, which recomputes
+# from the live source and checks the screen references it) still holds, so this pins the
+# post-#1 state, not a regression.
 _ORACLE_SOURCE_HASH_037_038 = (
-    "353d09483a3f9e98d489fddcde66f96cc8211f841f430305566c8c04d205edc1"
+    "e930f582aaa10c56b1b1335b3f6e049909a683b552dd0153aa18f82f7e3ecdfe"
 )
 
 
