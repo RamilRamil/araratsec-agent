@@ -97,7 +97,6 @@ def _loop(tmp_path, provider):
     loop = OrchestratorLoop(
         session, memory, tmp_path, pack=AUDIT_PACK, reasoning_provider=provider,
         confirmations_dir=tmp_path / "conf", sandbox=_FakeSandbox(),
-        poc_dir=tmp_path / "audit" / "poc",
     )
     return loop
 

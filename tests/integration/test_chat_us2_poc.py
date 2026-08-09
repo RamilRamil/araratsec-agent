@@ -57,7 +57,6 @@ def _setup(tmp_path, provider, sandbox=None):
         session_facts_provider=lambda: None,
         confirmations_dir=tmp_path / "conf",
         sandbox=sandbox or FakeSandbox(),
-        poc_dir=tmp_path / "audit" / "poc",
     )
     return loop, session, memory
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from sr_agent.models.action import Action, ActionType, ValidationResult, ValidationStatus
+from sr_agent.models.action import Action, ValidationResult, ValidationStatus
 from audit_agent.session import Principal
 from sr_agent.models.chat import (
     MAX_TOOL_CALLS_PER_TURN,
@@ -23,7 +23,7 @@ def _principal(project_id: str = "proj-1") -> Principal:
 
 def _invocation() -> ToolInvocation:
     return ToolInvocation(
-        action=Action(action_type=ActionType.read_file, params={"path": "A.sol"}),
+        action=Action(action_type="read_file", params={"path": "A.sol"}),
         validation_result=ValidationResult(status=ValidationStatus.approved),
         result_summary="[DATA START]...[DATA END]",
     )

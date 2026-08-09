@@ -11,5 +11,5 @@ from sr_agent.tools.readonly import search_code
 
 def test_example_vault_has_reentrancy_shape():
     example = Path(__file__).resolve().parents[3] / "examples" / "vulnerable-vault"
-    hits = search_code("call{value:", example)
+    hits = search_code("call{value:", example, file_ext=".sol")
     assert any(h.file == "Vault.sol" for h in hits)

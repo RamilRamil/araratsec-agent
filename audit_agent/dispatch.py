@@ -15,8 +15,8 @@ from typing import TYPE_CHECKING
 
 from audit_agent.config import config
 from sr_agent.guardrails.sanitize import sanitize
-from sr_agent.models.action import ActionType
 from sr_agent.models.chat import PoCStatusEvent
+from audit_agent.actions import AuditActionType
 from audit_agent.finding import Finding, Severity
 from audit_agent.tools.onchain import (
     OnChainError, analyze_transactions, make_alchemy_fetcher,
@@ -26,10 +26,22 @@ from sr_agent.tools.readonly import ReadOnlyToolError, read_file, search_code
 from sr_agent.tools.sandbox import SandboxError
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from sr_agent.models.action import Action
     from sr_agent.orchestrator.pack import PackContext
 
 logger = logging.getLogger(__name__)
+
+
+def _poc_dir(ctx: "PackContext") -> "Path":
+    """The pack-owned PoC output directory (feature 002 / D2).
+
+    The kernel removed `poc_dir` from `PackContext`; PoC state is pack-side now.
+    We derive it from the scope the kernel DOES provide — reproducing the old
+    kernel default (`<scope_root>/audit/poc`) so PoC output is behavior-identical.
+    """
+    return ctx.scope_root / "audit" / "poc"
 
 
 def dispatch(action: "Action", ctx: "PackContext") -> str:
@@ -38,17 +50,20 @@ def dispatch(action: "Action", ctx: "PackContext") -> str:
     params = action.params
 
     try:
-        if at == ActionType.read_file:
-            content = read_file(params["path"], ctx.audit_root)
+        # read_file / search_code are kernel-generic ids (D6) — inherited, not in
+        # AUDIT_ACTIONS, but the pack still dispatches their output.
+        if at == "read_file":
+            content = read_file(params["path"], ctx.scope_root)
             return ctx.wrap_data(content, tool="read_file", path=str(params.get("path", "")))
 
-        if at == ActionType.search_code:
-            root = params.get("root", str(ctx.audit_root))
-            hits = search_code(params["pattern"], root)
+        if at == "search_code":
+            root = params.get("root", str(ctx.scope_root))
+            # file_ext is REQUIRED kernel-side now (D6): pass the audit default explicitly.
+            hits = search_code(params["pattern"], root, file_ext=".sol")
             body = "\n".join(f"{h.file}:{h.line}: {h.text}" for h in hits) or "(no matches)"
             return ctx.wrap_data(body, tool="search_code", path=str(root))
 
-        if at == ActionType.analyze_transactions:
+        if at == AuditActionType.analyze_transactions:
             try:
                 fetcher = make_alchemy_fetcher(config.alchemy_api_key)
                 res = analyze_transactions(
@@ -60,14 +75,14 @@ def dispatch(action: "Action", ctx: "PackContext") -> str:
             except OnChainError as e:
                 return ctx.wrap_data(f"TOOL ERROR: {e}", tool="analyze_transactions", path="")
     except ReadOnlyToolError as e:
-        return ctx.wrap_data(f"TOOL ERROR: {e}", tool=at.value, path="")
+        return ctx.wrap_data(f"TOOL ERROR: {e}", tool=at, path="")
     except KeyError as e:
-        return ctx.wrap_data(f"TOOL ERROR: missing required param {e}", tool=at.value, path="")
+        return ctx.wrap_data(f"TOOL ERROR: missing required param {e}", tool=at, path="")
 
     # Slither/Mythril and write/execute dispatch land in later blocks.
     return ctx.wrap_data(
-        f"[STUB] Tool {at.value!r} not yet implemented.",
-        tool=at.value, path=str(params.get("path", "")),
+        f"[STUB] Tool {at!r} not yet implemented.",
+        tool=at, path=str(params.get("path", "")),
     )
 
 
@@ -76,16 +91,16 @@ def execute_confirmed(action: "Action", ctx: "PackContext") -> "tuple[str, PoCSt
     at = action.action_type
     finding_id = str(action.params.get("finding_id", "UNKNOWN"))
 
-    if at == ActionType.write_poc:
-        res = write_poc(finding_id, ctx.poc_dir, generator=ctx.poc_generator)
+    if at == AuditActionType.write_poc:
+        res = write_poc(finding_id, _poc_dir(ctx), generator=None)
         event = PoCStatusEvent(finding_id=finding_id, status="written", poc_path=str(res.path))
         return (f"PoC written to {res.path}", event)
 
-    if at == ActionType.run_tests:
+    if at == AuditActionType.run_tests:
         test_path = action.params.get("test_path")
         try:
             result = run_tests(
-                ctx.audit_root, ctx.sandbox, test_path=test_path,
+                ctx.scope_root, ctx.sandbox, test_path=test_path,
                 foundry_test_dir="audit/poc",  # PoCs live outside default test/ (poc-execution.md)
             )
         except SandboxError as e:
