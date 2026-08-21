@@ -1,88 +1,128 @@
-# Compromised Private Keys Remain the Biggest Source of DeFi Losses
+# Анализ источника: Blockaid — компрометация приватных ключей как главный источник потерь DeFi
 
-**Source**: https://blockaid.io/blog/compromised-private-keys-remain-the-biggest-source-of-defi-losses
-**Publisher**: Blockaid (on-chain security company)
-**Period**: April–May 2026 incidents
-
----
-
-## Three-step attack pattern
-
-All major incidents follow this pattern:
-
-```
-1. ACCESS      → steal deployer / admin / governance key
-                  OR blind-sign a malicious transaction (Bybit 2025)
-2. ESCALATION  → upgrade contract to malicious version
-                  OR grant self admin role
-                  OR reconfigure bridge/cross-chain routing
-3. DRAIN       → mint tokens, transfer balances, unlock funds
-```
-
-Key insight: legitimate signatures from a compromised key are **indistinguishable** from normal operations by standard on-chain analysis. The attack is invisible until step 3.
+## Метаданные
+- **Название**: Compromised Private Keys Remain the Biggest Source of DeFi Losses
+- **Авторы**: Blockaid (компания on-chain безопасности)
+- **Год / Venue**: 2026, корпоративный блог (отчёт по инцидентам апреля–мая 2026)
+- **arXiv / DOI**: — · https://blockaid.io/blog/compromised-private-keys-remain-the-biggest-source-of-defi-losses
+- **Источник**: обзор публикаций по инцидентам DeFi
 
 ---
 
-## 2026 incidents
+## 1. СУТЬ
 
-| Protocol | Date | Loss | Method |
+Все крупные инциденты DeFi весны 2026 укладываются в один трёхшаговый паттерн ACCESS → ESCALATION → DRAIN, где легитимная подпись скомпрометированного ключа неотличима от нормальной операции стандартным on-chain анализом — и потому аудит кода не может это остановить, но может задокументировать радиус поражения.
+
+---
+
+## 2. МЕТОД
+
+**Тип работы**: отчёт по инцидентам, без метрик и baseline. Период: апрель–май 2026.
+
+### Трёхшаговый паттерн атаки
+
+```
+1. ACCESS      → украсть ключ деплоера / админа / governance
+                  ИЛИ вслепую подписать вредоносную транзакцию (Bybit 2025)
+2. ESCALATION  → обновить контракт до вредоносной версии
+                  ИЛИ выдать себе роль админа
+                  ИЛИ переконфигурировать маршрутизацию моста/cross-chain
+3. DRAIN       → минт токенов, перевод балансов, разблокировка средств
+```
+
+Ключевое наблюдение: легитимные подписи от скомпрометированного ключа **неотличимы** от нормальных операций стандартным on-chain анализом. Атака невидима до шага 3.
+
+### Инциденты 2026
+
+| Протокол | Дата | Потери | Метод |
 |---|---|---|---|
-| Conduit | Apr 23 | $6.59M | Compromised account executed malicious USDC proxy upgrade on Arbitrum |
-| Syndicate | Apr 29 | $629K (~33% supply) | Compromised governance key redirected Arbitrum Orbit token bridge to Base |
-| Wasabi Protocol | Apr 30 | $5M (4 chains) | Deployer key granted admin role → upgraded perp vaults to malicious version |
-| StakeDAO | May 27 | ~43.79 ETH | Deployer reconfigured LayerZero v2 token peer → minted 5.4 trillion tokens |
-| StablR | — | $12.85M | 1-of-3 multisig signer compromised → funds routed via privacy network |
-| Alephium | May 30 | $815K | Fake cross-chain validation messages |
+| Conduit | 23 апр | $6.59M | Скомпрометированный аккаунт выполнил вредоносное обновление прокси USDC в Arbitrum |
+| Syndicate | 29 апр | $629K (~33% supply) | Скомпрометированный governance-ключ перенаправил токен-мост Arbitrum Orbit на Base |
+| Wasabi Protocol | 30 апр | $5M (4 сети) | Ключ деплоера выдал роль админа → обновление perp-хранилищ до вредоносной версии |
+| StakeDAO | 27 мая | ~43.79 ETH | Деплоер переконфигурировал peer токена LayerZero v2 → минт 5.4 трлн токенов |
+| StablR | — | $12.85M | Скомпрометирован подписант мультисига 1-of-3 → средства выведены через privacy-сеть |
+| Alephium | 30 мая | $815K | Подложные сообщения cross-chain валидации |
+
+### Слепая подпись эквивалентна краже ключа
+
+Пример Bybit 2025: ключ вообще не крали. Подписанта манипуляцией заставили подписать вредоносную транзакцию, не понимая её сути. С точки зрения контракта это идентично краже ключа.
+
+> «Дренаж занимает минуты. Окно для обнаружения и ответа — только секунды.»
+
+### Почему аудиты кода это не останавливают
+
+Аудит кода проверяет, что контракт ведёт себя согласно спецификации при вызове с легитимными входами. Скомпрометированный админский ключ И ЕСТЬ легитимный вход — контракт исполняется ровно так, как написан.
+
+Что аудит СПОСОБЕН сделать: задокументировать **радиус поражения** — что становится возможным, если админский ключ украден.
 
 ---
 
-## Blind signing as equivalent to key theft
+## 3. СКЕПТИК
 
-Bybit 2025 example: the key was never stolen. The signer was manipulated into signing a malicious transaction without understanding what it did. From the contract's perspective — identical to key theft.
+**Насколько доверять числам:**
 
-> "Дренаж занимает минуты. Окно для обнаружения и ответа — только секунды."
+- **Выборка — два месяца и шесть инцидентов.** Этого недостаточно для утверждения «крупнейший источник потерь»; заголовочный тезис держится не на этих данных, а на более широкой статистике, которую сам источник не приводит. Независимое подтверждение есть в [[2606.15465-audit-gap]] (24.4% потерь) — на него и опираться.
+- **Отбор инцидентов не описан.** Почему именно эти шесть? Инциденты с другим root cause за тот же период в отчёт не попали, что делает картину «все инциденты следуют паттерну» тавтологичной.
+- **Коммерческий интерес прямой.** Blockaid продаёт продукт для детекции вредоносных транзакций в реальном времени; вывод «аудит кода не помогает, нужен мониторинг» — одновременно вывод и реклама. Он при этом похоже верен, но проверять его надо не по этому источнику.
+- **Атрибуция «компрометация ключа» иногда предположительна.** Извне отличить украденный ключ от инсайдера или rug pull обычно невозможно; отчёт эту неоднозначность не обсуждает.
+- **Технический механизм описан достоверно и проверяем по on-chain данным.** Сам паттерн ACCESS → ESCALATION → DRAIN и его следствие (невидимость до шага 3) — это не статистика, а свойство модели, и оно устойчиво.
 
----
-
-## Why code audits don't stop this
-
-A code audit verifies that the contract behaves as specified when called with legitimate inputs. A compromised admin key IS a legitimate input — the contract executes exactly as written.
-
-What an audit CAN do: document the **blast radius** — what becomes possible if the admin key is stolen.
+**Вывод по доверию**: **паттерн — брать, статистику — не брать**. Для нас ценно операциональное следствие: аудит обязан описывать радиус поражения при компрометации ключа, потому что предотвратить он это не может.
 
 ---
 
-## Implications for SR-agent
+## 4. МОДУЛЬ
 
-### What our existing BastetTags cover
+- [x] **Планировщик** — чеклист Stage 1 по authority-функциям
+- [x] **Оркестратор** — комбинирование находок в Stage 3, декларация scope
+- [x] **Инструменты** — проверки upgrade/mint/bridge/role authority
+- [ ] LLM-ядро
+- [ ] Память
+- [ ] Guardrails
+- [ ] I/O
 
-- `centralization_risk` — single admin controls critical functions ✓
-- `admin_privilege` — excessive admin powers ✓
-- `upgradability` — proxy upgrade patterns ✓
-- `delegatecall_injection` — malicious delegatecall via upgrade ✓
+---
 
-### What Stage 1 should explicitly check for key-compromise scenarios
+## 5. РЕШЕНИЕ
 
-Add to Stage 1 discovery checklist:
+**5.1 Что покрывают существующие `BastetTag`**
 
-1. **Upgrade authority** — who can upgrade? timelock? multisig threshold?
-2. **Mint authority** — who can mint tokens? any cap? any guard?
-3. **Bridge configuration** — who can change peer addresses / token mappings?
-4. **Role assignment** — who can grant admin roles? self-grant possible?
-5. **Multisig quality** — 1-of-N vs M-of-N? hardware wallets required?
+- `centralization_risk` — один админ контролирует критичные функции ✓
+- `admin_privilege` — избыточные полномочия админа ✓
+- `upgradability` — паттерны обновления прокси ✓
+- `delegatecall_injection` — вредоносный delegatecall через обновление ✓
 
-This maps to the "blast radius" question: if the admin key is compromised tomorrow, what is the maximum damage an attacker can do?
+**5.2 Что Stage 1 должен явно проверять на сценарии компрометации ключа**
 
-### Stage 3 synthesis note
+Добавить в чеклист discovery:
+1. **Upgrade authority** — кто может обновлять? есть ли timelock? порог мультисига?
+2. **Mint authority** — кто может минтить? есть ли cap? есть ли guard?
+3. **Bridge configuration** — кто может менять адреса peer / маппинги токенов?
+4. **Role assignment** — кто может выдавать роли админа? возможна ли самовыдача?
+5. **Качество мультисига** — 1-of-N против M-of-N? требуются ли аппаратные кошельки?
 
-When combining findings, a chain like:
+Это отображается в вопрос о радиусе поражения: если админский ключ скомпрометируют завтра, каков максимальный ущерб?
+
+**5.3 Замечание по синтезу в Stage 3**
+
+При комбинировании находок цепочка вида
 ```
-admin_privilege (no timelock) + upgradability (no multisig) = CRITICAL blast radius
+admin_privilege (нет timelock) + upgradability (нет мультисига) = КРИТИЧЕСКИЙ радиус поражения
 ```
-should produce a combined finding even if each finding individually is Medium.
+должна порождать комбинированную находку, даже если каждая находка по отдельности — Medium.
 
-### Connection to 2606.15465 (Audit Gap)
+**5.4 Связь с [[2606.15465-audit-gap]]**
 
-Confirms: private key compromise = 24.4% of total DeFi losses. Our audit scope declaration in final report must explicitly note:
-- We assessed the code-layer blast radius of key compromise
-- We did NOT assess key management practices, signer workflows, or operational security
+Подтверждает: компрометация приватных ключей = 24.4% совокупных потерь DeFi. Декларация scope в финальном отчёте обязана явно указывать:
+- мы оценили радиус поражения от компрометации ключа **на уровне кода**
+- мы НЕ оценивали практики управления ключами, workflow подписантов и операционную безопасность
+
+---
+
+## 6. ВОПРОСЫ
+
+- Как формализовать «радиус поражения» в выходной схеме, чтобы это был структурированный артефакт, а не абзац прозы в отчёте?
+- Определяется ли качество мультисига (1-of-N против M-of-N) из кода, или это всегда on-chain/операционные данные вне scope?
+- Слепая подпись эквивалентна краже ключа — следует ли из этого, что аудит должен оценивать читаемость транзакций (наличие EIP-712 и осмысленных типов) как фактор безопасности?
+- Есть ли более широкая статистика по компрометации ключей, чем шесть инцидентов за два месяца, — независимая от коммерческого источника?
+- Ускоряет ли комбинирование по 5.3 рост числа находок до уровня шума? Проверить на eval-наборе.

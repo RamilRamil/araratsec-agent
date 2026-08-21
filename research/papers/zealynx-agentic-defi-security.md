@@ -1,11 +1,12 @@
 # Анализ источника: Zealynx — Agentic DeFi Security
 
 ## Метаданные
-- **Тип**: Practitioner research article (консалтинг/аудит)
-- **Автор**: Zealynx (zealynx.io)
-- **URL**: zealynx.io/research/adversarial-security/agentic-defi-security
+- **Название**: Agentic DeFi Security
+- **Авторы**: Zealynx (zealynx.io)
+- **Год / Venue**: 2026, practitioner research article (консалтинг/аудит)
+- **arXiv / DOI**: — · zealynx.io/research/adversarial-security/agentic-defi-security
 - **Источник**: blockthreat.com newsletter
-- **Контекст**: 2026, пишут про реальные инциденты (Bankr/Grok май 2026, ElizaOS, Walbi)
+- **Контекст**: пишут про реальные инциденты (Bankr/Grok май 2026, ElizaOS, Walbi)
 
 ---
 

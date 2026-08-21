@@ -1,80 +1,115 @@
-# AIUC-1 and RAG / Retrieval Controls
+# Анализ источника: AIUC-1 и контроли RAG / retrieval
 
-**Sources**:
-- https://www.aiuc-1.com/
-- https://aiuc.com/research/aiuc-1-mitre-atlas
-- https://aiuc.com/research/framework-comparison
-
-**Caveat**: The full text of AIUC-1's 130 controls is behind a demo wall. This note is based on AIUC's publicly published pillars + their MITRE ATLAS crosswalk + security-community readings, not verbatim control text.
-
----
-
-## AIUC-1 does not name "RAG" as a category
-
-There is no dedicated "RAG pillar." Retrieval/knowledge-base concerns are distributed across two of the six pillars plus the MITRE ATLAS mapping.
-
-### 1. Security pillar
-Covers **prompt injection defense** — including *indirect prompt injection*, where the malicious instruction arrives not from the user but from retrieved content. This is exactly the RAG attack vector.
-
-### 2. Data & Privacy pillar
-Covers data integrity and isolation — including **data poisoning** of the source corpus that retrieval draws from.
-
-### 3. MITRE ATLAS mapping
-AIUC-1 operationalizes ATLAS techniques, including:
-- Training / data poisoning
-- Indirect prompt injection via retrieved content
-- Stored (persistent) injection — attacker seeds the database; the payload stays dormant until the model retrieves it
-
-This is Memory Injection expressed in ATLAS vocabulary.
+## Метаданные
+- **Название**: AIUC-1 and RAG / Retrieval Controls
+- **Авторы**: AIUC (отраслевой стандарт), разбор по публичным материалам
+- **Год / Venue**: 2026, industry standard + MITRE ATLAS crosswalk
+- **arXiv / DOI**: — · https://www.aiuc-1.com/ · https://aiuc.com/research/aiuc-1-mitre-atlas · https://aiuc.com/research/framework-comparison
+- **Источник**: обзор публичных материалов AIUC
+- **Оговорка**: полный текст 130 контролей AIUC-1 закрыт demo-wall. Разбор основан на публично опубликованных пилларах + их crosswalk на MITRE ATLAS + прочтениях security-сообщества, **не на дословном тексте контролей**.
 
 ---
 
-## Five retrieval controls AIUC-1 prescribes
+## 1. СУТЬ
 
-| AIUC-1 control | SR-agent equivalent |
+AIUC-1 не выделяет RAG в отдельную категорию, а размазывает retrieval-риски по двум пилларам и мэппингу на MITRE ATLAS, прописывая пять контролей поверх существующего retrieval-пайплайна — тогда как SR-agent убирает семантический retrieval из памяти агента вообще, устраняя причину, а не симптом.
+
+---
+
+## 2. МЕТОД
+
+**Тип работы**: отраслевой стандарт (набор контролей), не исследование. Метрик и экспериментов нет.
+
+### AIUC-1 не называет «RAG» категорией
+
+Отдельного «RAG-пиллара» нет. Вопросы retrieval и базы знаний распределены по двум из шести пилларов плюс мэппинг на MITRE ATLAS.
+
+1. **Security pillar** — защита от prompt injection, включая *непрямую* инъекцию, когда вредоносная инструкция приходит не от пользователя, а из извлечённого контента. Это в точности вектор атаки на RAG.
+2. **Data & Privacy pillar** — целостность и изоляция данных, включая **отравление данных** исходного корпуса, из которого идёт retrieval.
+3. **Мэппинг на MITRE ATLAS** — AIUC-1 операционализирует техники ATLAS: отравление обучения/данных; непрямая prompt injection через извлечённый контент; stored (persistent) injection — атакующий засевает базу, payload лежит в спячке, пока модель его не извлечёт. Это Memory Injection на языке ATLAS.
+
+### Пять retrieval-контролей, которые предписывает AIUC-1
+
+| Контроль AIUC-1 | Эквивалент в SR-agent |
 |---|---|
-| **Source verification** — retrieve only from trusted, authenticated sources | `project_id` as a hard key + principal isolation |
-| **Content integrity** — cryptographic hashing to detect unauthorized modification | **HMAC-SHA256 on every memory record** — literally this control |
-| **Input scanning** — check retrieved content for injection patterns before it reaches the LLM | `sanitize()` (NFKC, zero-width, encoding detection) + `[DATA START]...[DATA END]` wrapping |
-| **Access controls** — restrict who can write to the knowledge base | Append-only memory + status gate (`REQUIRES_HUMAN_CONFIRMATION`) |
-| **Monitoring** — track retrieval patterns, flag anomalies | Langfuse tracer (Phase 9) |
+| **Source verification** — извлекать только из доверенных аутентифицированных источников | `project_id` как жёсткий ключ + изоляция принципалов |
+| **Content integrity** — криптографическое хеширование для детекции несанкционированной модификации | **HMAC-SHA256 на каждой записи памяти** — буквально этот контроль |
+| **Input scanning** — проверять извлечённый контент на паттерны инъекции до попадания в LLM | `sanitize()` (NFKC, zero-width, детекция кодировок) + обёртка `[DATA START]...[DATA END]` |
+| **Access controls** — ограничить, кто может писать в базу знаний | Append-only память + status gate (`REQUIRES_HUMAN_CONFIRMATION`) |
+| **Monitoring** — отслеживать паттерны retrieval, флагировать аномалии | Трейсер Langfuse (Phase 9) |
+
+### Ключевое наблюдение: HMAC = «content integrity» из AIUC-1
+
+Предписанный AIUC-1 контроль «целостность контента через криптографическое хеширование для детекции несанкционированных модификаций извлекаемых документов» — прямое описание того, что делает наш слой HMAC. Каждая запись памяти подписана; запись с неверифицируемым HMAC молча отбрасывается при загрузке.
+
+Мы пришли к этому независимо, из threat model Memory Injection (2503.16248) — и оно чисто ложится на требование отраслевого стандарта.
+
+### Архитектурное различие
+
+- **AIUC-1 предполагает, что RAG у вас есть**, и предписывает обернуть его контролями (хеширование, сканирование, мониторинг). Лечит симптом — пайплайн retrieval, который надо защищать.
+- **SR-agent убирает семантический retrieval из памяти агента полностью.** Память загружается по точному ключу (`project_id` + `target`), а не по близости эмбеддингов. Нет вероятностного поиска → нечего отравлять. Лечит причину.
+
+Релевантное число, которое AIUC-1 неявно адресует: **5 отравленных документов в корпусе из миллионов манипулируют ответами AI примерно в 90% случаев** (исследования RAG poisoning). Именно поэтому память агента здесь не построена на retrieval.
 
 ---
 
-## Key observation: HMAC = AIUC-1's "content integrity"
+## 3. СКЕПТИК
 
-AIUC-1's prescribed control "content integrity via cryptographic hashing to detect unauthorized modifications to retrieved documents" is a direct description of what our HMAC layer does. Every memory record is signed; a record whose HMAC does not verify is silently dropped on load.
+**Насколько доверять источнику:**
 
-We arrived at this independently from the Memory Injection threat model (2503.16248) — and it maps cleanly onto the industry standard's requirement.
+- **Первичный текст недоступен.** Разбор строится на маркетинговых пилларах и сторонних прочтениях. Соответствие «контроль AIUC-1 ↔ наш механизм» в таблице — наша интерпретация, а не сверка с нормативным текстом. Это главный риск всей заметки.
+- **Стандарт — не доказательство.** Наличие контроля в отраслевом стандарте не означает, что он измеримо снижает риск; AIUC-1 не публикует эмпирику эффективности.
+- **«5 документов → 90% манипуляции» — чужое число без ссылки.** Оно приведено по памяти о RAG-poisoning исследованиях; корпус, модель и определение «манипуляции» не зафиксированы. Использовать как иллюстрацию, не как факт.
+- **Тезис «мы превосходим стандарт» нужно держать узко.** Он верен для памяти агента, но не означает соответствия AIUC-1 в целом — остальные пиллары (safety, accountability и т.д.) мы не оценивали.
+- **Конфликт интересов у источника.** AIUC — коммерческая организация, продающая сертификацию по собственному стандарту; сравнение фреймворков написано ей же.
 
----
-
-## The architectural difference
-
-- **AIUC-1 assumes you have RAG** and prescribes wrapping it in controls (hashing, scanning, monitoring). It treats the symptom — a retrieval pipeline you must defend.
-- **SR-agent removes semantic retrieval from agent memory entirely.** Memory is loaded by exact key (`project_id` + `target`), not by embedding similarity. No probabilistic search → nothing to poison. It treats the cause.
-
-The relevant research number AIUC-1 implicitly addresses: **5 poisoned documents in a corpus of millions can manipulate AI responses ~90% of the time** (RAG poisoning research). This is precisely why agent memory is not built on retrieval here.
+**Вывод по доверию**: ценность — в **чеклисте из пяти контролей** как внешней перекрёстной проверке нашей архитектуры памяти. Все количественные утверждения и заявления о соответствии стандарту требуют первичных источников, прежде чем идти куда-либо наружу.
 
 ---
 
-## Implications for SR-agent
+## 4. МОДУЛЬ
 
-1. **We exceed the standard on memory.** Where AIUC-1 asks for content integrity on retrieved docs, we don't retrieve by similarity at all — and still sign everything.
-
-2. **Gap to close before any future knowledge base.** The `knowledge_chunks` parameter in `build_messages()` is a placeholder for a future reference KB (e.g. vulnerability-pattern excerpts). If/when populated, it MUST inherit the same five controls:
-   - read-only, statically curated (source verification)
-   - hashed (content integrity)
-   - wrapped in `[DATA START]` + sanitized (input scanning)
-   - never writable by the LLM (access control)
-   - This KB is a *reference corpus about vulnerabilities*, never the agent's decision memory. The two layers must stay separate.
-
-3. **Marketing/post angle.** "An industry standard (AIUC-1) requires cryptographic integrity on retrieved content. Most popular RAG frameworks don't even do that. SR-agent goes further and removes the poisonable retrieval step from memory entirely."
+- [x] **Память** — контроли целостности, отказ от семантического retrieval
+- [x] **Guardrails** — sanitize, обёртка `[DATA START]`, status gate
+- [x] **I/O** — изоляция извлечённого контента от инструкций
+- [x] **Оркестратор** — мониторинг паттернов доступа (Phase 9)
+- [ ] LLM-ядро
+- [ ] Инструменты
+- [ ] Планировщик
 
 ---
 
-## Related
+## 5. РЕШЕНИЕ
 
-See also:
-- [[composable-security-prompt-injection-mistakes]] — Mistake 2 (one-way filtering) and Mistake 4 (input sanitization alone) overlap directly with the RAG indirect-injection vector
-- [[2606.15465-audit-gap]] — human-vector attacks; stored injection is a software analog
+**5.1 По памяти мы превосходим стандарт — зафиксировать, но узко**
+
+Там, где AIUC-1 требует целостности контента для извлечённых документов, мы вообще не извлекаем по близости — и при этом всё подписываем. Формулировать это утверждение только про слой памяти.
+
+**5.2 Разрыв, который надо закрыть до появления любой базы знаний**
+
+Параметр `knowledge_chunks` в `build_messages()` — заглушка под будущую справочную KB (например, выдержки из паттернов уязвимостей, ср. `knowledge/vulnerability-patterns/`). Если её наполнят, она ОБЯЗАНА унаследовать те же пять контролей:
+- только чтение, статически курируется (source verification)
+- хешируется (content integrity)
+- оборачивается в `[DATA START]` и санитизируется (input scanning)
+- никогда не доступна LLM на запись (access control)
+
+Эта KB — *справочный корпус про уязвимости*, но никогда не решающая память агента. Слои обязаны оставаться раздельными.
+
+**5.3 Мониторинг — Phase 9**
+
+Пятый контроль (отслеживание паттернов retrieval, флагирование аномалий) закрывается трейсером Langfuse. До него структурированного лога доступа к памяти нет — тот же разрыв, что и в [[composable-security-prompt-injection-mistakes]] (ошибка 5).
+
+**5.4 Связанные разборы**
+
+- [[composable-security-prompt-injection-mistakes]] — ошибка 2 (одностороннее фильтрование) и ошибка 4 (только санитизация входа) прямо пересекаются с вектором непрямой инъекции через retrieval
+- [[2606.15465-audit-gap]] — human-vector атаки; stored injection является их программным аналогом
+
+---
+
+## 6. ВОПРОСЫ
+
+- Как получить нормативный текст 130 контролей, чтобы проверить таблицу соответствий, а не полагаться на пиллары?
+- Откуда именно число «5 документов → ~90%»? Нужна первичная работа по RAG poisoning со ссылкой.
+- Каким пилларам AIUC-1, кроме Security и Data & Privacy, мы не соответствуем? Без этого нельзя говорить о соответствии стандарту в целом.
+- Что считать «аномальным паттерном retrieval» в нашей модели, где загрузка идёт по точному ключу — какие вообще аномалии там наблюдаемы?
+- Если справочная KB появится, как гарантировать разделение слоёв технически, а не соглашением — нужен отдельный тип и отдельный путь загрузки?

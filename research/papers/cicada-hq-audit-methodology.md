@@ -1,10 +1,12 @@
 # Анализ источника: cicada_HQ Audit Methodology
 
 ## Метаданные
-- **Тип**: Practitioner methodology (не академическая статья)
-- **Автор**: @cicada_HQ
-- **Источник**: X/Twitter thread (2063348107601985592), ref blockthreat.com
-- **Контекст**: Опубликовано во время активного 0xMarkets audit contest — реальный процесс, не теория
+- **Название**: cicada_HQ Audit Methodology
+- **Авторы**: @cicada_HQ
+- **Год / Venue**: 2026, X/Twitter thread (practitioner methodology, не академическая статья)
+- **arXiv / DOI**: — · X/Twitter thread 2063348107601985592
+- **Источник**: blockthreat.com newsletter
+- **Контекст**: опубликовано во время активного 0xMarkets audit contest — реальный процесс, не теория
 
 ---
 

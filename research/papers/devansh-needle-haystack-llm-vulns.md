@@ -1,146 +1,122 @@
-# Needle in the Haystack: LLMs for Vulnerability Finding
+# Анализ источника: Needle in the Haystack — LLM для поиска уязвимостей
 
-**Source**: https://devansh.bearblog.dev/needle-in-the-haystack/
-**Author**: Devansh
-**Results**: ~112 CVEs found, ~$4,000 API credits (Firefox + multiple projects)
-
----
-
-## Core thesis
-
-"Minimal strategic scaffolding + maximum targeted research" > mega-prompt > no structure.
-
-Context length is the enemy. As context grows, model reliability drops — a single invariant violation buried in thousands of lines of legitimate code gets missed.
+## Метаданные
+- **Название**: Needle in the Haystack: LLMs for Vulnerability Finding
+- **Авторы**: Devansh
+- **Год / Venue**: 2026, personal blog (practitioner report, не академическая статья)
+- **arXiv / DOI**: — · https://devansh.bearblog.dev/needle-in-the-haystack/
+- **Источник**: blockthreat.com newsletter
+- **Результат автора**: ~112 CVE, ~$4 000 API-кредитов (Firefox + несколько проектов)
 
 ---
 
-## Context Rot problem
+## 1. СУТЬ
 
-When the "needle" (vulnerability) is a single invariant violation buried in thousands of lines of legitimate code, long contexts cause the model to:
-- Generate theoretical vulnerabilities in unreachable code paths ("breadth-first hallucination")
-- Miss the actual vulnerability due to attention dilution
-- Produce false positives without checking attacker accessibility
-
-**Implication**: Prioritize and slice before feeding to LLM. Never dump the whole codebase.
+Для поиска уязвимостей «минимальный стратегический скаффолдинг + максимум таргетированного research» работает лучше, чем мега-промпт, потому что длина контекста — главный враг: единственное нарушение инварианта, закопанное в тысячах строк легитимного кода, теряется по мере роста контекста.
 
 ---
 
-## Token budget distribution
+## 2. МЕТОД
+
+**Тип работы**: practitioner report. Метрика — найденные CVE (~112) при известной стоимости (~$4k). Контролируемых сравнений и baseline нет.
+
+### Проблема Context Rot
+
+Когда «иголка» — это одно нарушение инварианта среди тысяч строк корректного кода, длинный контекст заставляет модель:
+- генерировать теоретические уязвимости в недостижимых путях («breadth-first hallucination»);
+- пропускать реальную уязвимость из-за размывания внимания;
+- выдавать false positives без проверки доступности для атакующего.
+
+**Следствие**: приоритизировать и нарезать ДО подачи в LLM. Никогда не отдавать весь кодбейз целиком.
+
+### Распределение token budget
 
 ```
-< 10%   — stable scaffolding: threat model, trust boundaries, invariant list
-60-80%  — focused audit of individual slices in narrow contexts
-20-30%  — verifier loops: tests, fuzzing, PoC reproduction, patch validation
+< 10%   — стабильный скаффолдинг: threat model, trust boundaries, список инвариантов
+60-80%  — сфокусированный аудит отдельных срезов в узких контекстах
+20-30%  — verifier loops: тесты, фаззинг, воспроизведение PoC, валидация патча
 ```
 
----
+### Нарезка кода на срезы
 
-## Code slicing
+Вместо аудита всего кодбейза — тонкие срезы: аутентификация/авторизация, управление сессиями, парсинг запросов, загрузка файлов / десериализация, границы песочницы, интерфейсы плагинов. У каждого среза свои threat model и research. Это то же, что наши `priority_targets` из Stage 1.
 
-Instead of auditing the entire codebase, split into thin slices:
-- Authentication / authorization
-- Session management
-- Request parsing
-- File uploads / deserialization
-- Sandbox boundaries
-- Plugin interfaces
+### 10 приёмов промптинга для поиска уязвимостей
 
-Each slice gets its own threat model and targeted research. Same as our `priority_targets` from Stage 1.
+1. **Утверждать существование.** «В этой функции точно есть 2-3 проблемы безопасности» > «уязвима ли она?». Переопределяет задачу модели с оценки на поиск.
+2. **Требовать PoC, а не вердикт.** «Напиши HTTP-запрос, обходящий эту валидацию» > «достаточна ли валидация?». Заставляет выдать конкретный проверяемый артефакт.
+3. **Red team framing.** «Тебе платят за реально эксплуатируемые уязвимости, не за теоретические.» Сдвигает приоритет с покрытия на impact.
+4. **Ложный якорь.** «Одну уязвимость я уже нашёл, найди остальные.» Создаёт социальное доказательство, что код действительно багованный.
+5. **Инверсия вопроса.** «Как бы ты это сломал?» > «Безопасно ли это?». Инвертированные промпты дают в 2-3 раза больше валидных находок.
+6. **Декомпозиция инвариантов.** Сначала перечислить все допущения функции, затем проверить каждый инвариант независимо.
+7. **Допущение об ошибке разработчика.** «Считай, что разработчик внёс сюда баг.» Блокирует склонность модели рационализировать код как корректный.
+8. **Сравнительные промпты.** «Чем это отличается от стандартной безопасной реализации этого паттерна?»
+9. **Итеративная эскалация.** После первых находок: «Какие более тонкие проблемы легко упустить?». Выталкивает модель в хвост распределения — менее очевидные, более ценные находки.
+10. **Явная модель атакующего.** «Ты удалённый неаутентифицированный атакующий с доступом только к публичному API.» Убирает false positives и заставляет искать креативно внутри ограничений.
 
----
+### Threat model как алгоритм сжатия
 
-## 10 prompting techniques for vulnerability finding
+> «Построение threat model перед аудитом — самая эффективная форма сжатия для security research.»
 
-### 1. Assert existence
-"This function definitely has 2-3 security issues" > "is this vulnerable?"
-Redefines model's optimization from evaluation to discovery.
+Оптимальный скаффолдинг: threat model на 1 страницу + короткий список критичных функций + небольшой набор инвариантов. НЕ 20-страничный Agent.md с политиками и style guide.
 
-### 2. Require PoC, not assessment
-"Write an HTTP request that bypasses this validation" > "is this validation sufficient?"
-Forces concrete, testable output.
+### Реальные примеры CVE (2026)
 
-### 3. Red team framing
-"You are paid to find real exploitable vulnerabilities, not theoretical ones."
-Shifts priority from coverage to impact.
+**Parse Server**: CVE-2026-29182/30228/30229 — три уязвимости аутентификации, где проверка `isMaster` существовала, но игнорировалась для `readOnlyMasterKey`; CVE-2026-30863 — обход валидации JWT audience при неполной конфигурации.
 
-### 4. False anchoring
-"I already found one vulnerability, find the rest."
-Creates social proof that code is genuinely buggy.
+**HonoJS**: CVE-2026-22817 — откат к HS256 при отсутствии пиннинга алгоритма → подпись токенов публичным ключом как HMAC-секретом; CVE-2026-22818 — JWKS middleware доверял `header.alg`, когда `alg` отсутствовал в JWK.
 
-### 5. Question inversion
-"How would you break this?" > "Is this secure?"
-Inverted prompts yield 2-3× more valid findings.
+**ElysiaJS**: обход подписи cookie — `let decoded = true` вместо `false` в логике ротации подписи.
 
-### 6. Invariant decomposition
-First: list all assumptions of the function.
-Then: check each invariant independently.
-
-### 7. Developer error assumption
-"Assume the developer introduced a bug here."
-Blocks model's tendency to rationalize code as correct.
-
-### 8. Comparative prompts
-"How does this differ from a standard secure implementation of this pattern?"
-
-### 9. Iterative escalation
-After first findings: "What more subtle issues are easy to miss?"
-Pushes model into the tail of the completion distribution — less obvious, more valuable findings.
-
-### 10. Explicit attacker model
-"You are a remote unauthenticated attacker with access only to the public API."
-Eliminates false positives, forces creative search within constraints.
+**BullFrog**: обход DNS pipelining — парсер проверял только первое сообщение в TCP-сегменте; обход sudo — членство в группе docker сохранялось после удаления из sudoers.
 
 ---
 
-## Threat model as compression algorithm
+## 3. СКЕПТИК
 
-> "Creating a threat model before auditing is the most efficient form of compression for security research."
+**Насколько доверять числам:**
 
-Optimal scaffolding: 1-page threat model + short list of critical functions + small set of invariants.
+- **Нет baseline и нет контроля.** ~112 CVE — сколько из них нашлись бы обычным промптингом или статическим анализатором? Прирост от каждого из 10 приёмов не измерен.
+- **«2-3 раза больше валидных находок» (приём 5) — единственная количественная оценка, и она без методологии.** Как считалась валидность, на какой выборке, кто судил — не сказано.
+- **Приёмы 1, 4, 7 — намеренное искажение априора.** «Здесь точно есть 2-3 бага» повышает recall ценой precision. Автор считает находки, а не false positives, поэтому эта цена в отчёте невидима. Для нас это критично: `docs/eval-principles.md` требует обратного — не заявлять находку без доказательства.
+- **Selection bias по целям.** Firefox и крупные OSS-проекты имеют богатые CVE-программы и много «низковисящих» багов; перенос на смарт-контракты не проверен — это другой язык, другой размер кодбейза, другая модель атакующего.
+- **Context rot — реальный и независимо подтверждаемый эффект**, здесь наблюдение согласуется с литературой. Ему доверять можно.
 
-NOT: 20-page Agent.md with policies and style guides.
-
----
-
-## Real CVE examples (2026)
-
-### Parse Server
-- CVE-2026-29182/30228/30229: Three auth vulnerabilities where `isMaster` check existed but was ignored for `readOnlyMasterKey`
-- CVE-2026-30863: JWT audience validation bypass when config was incomplete
-
-### HonoJS
-- CVE-2026-22817: Fallback to HS256 when no algorithm pinning → sign tokens with public key as HMAC secret
-- CVE-2026-22818: JWKS middleware trusted `header.alg` when `alg` missing from JWK
-
-### ElysiaJS
-- Cookie signature bypass: `let decoded = true` instead of `false` in signature rotation logic
-
-### BullFrog
-- DNS pipelining bypass: parser checked only first message in TCP segment
-- Sudo bypass: Docker group membership persisted after sudoers removal
+**Вывод по доверию**: числа — иллюстрация, а не доказательство. Ценность источника — **в структурных решениях** (нарезка, token budget, threat model как компрессия), а не в метриках. Приёмы, повышающие recall за счёт precision, брать только вместе с жёсткой стадией верификации (см. [[pkqs91-codex-bounty-workflow]]).
 
 ---
 
-## Implications for SR-agent
+## 4. МОДУЛЬ
 
-### Stage 1 (Discovery)
-Context rot validates our SIG prioritization approach — slice before sending to LLM.
+- [x] **LLM-ядро** — конструкция промптов Stage 1/2/3
+- [x] **Планировщик** — нарезка на срезы, threat model перед аудитом
+- [x] **Оркестратор** — распределение token budget по стадиям
+- [x] **Инструменты** — verifier loop (тесты, фаззинг, Slither)
+- [ ] Память
+- [ ] Guardrails
+- [ ] I/O
 
-Stage 1 system prompt should explicitly build threat model:
-1. Analyze contract's past known vulnerabilities (if any)
-2. Identify trust boundaries (who can call what)
-3. Map critical operations: mints, transfers, upgrades, approvals
-4. List invariants that must hold (e.g., "total minted ≤ cap")
+---
 
-### Stage 2 (CheckRunner) system prompt improvements
+## 5. РЕШЕНИЕ
 
-Apply prompting techniques 1, 2, 3, 5, 10:
+**5.1 Stage 1 (Discovery) — threat model строится явно**
+
+Context rot подтверждает наш подход с приоритизацией через SIG: резать до отправки в LLM. Системный промпт Stage 1 должен явно строить threat model:
+1. Проанализировать известные прошлые уязвимости контракта (если есть)
+2. Определить trust boundaries (кто что может вызвать)
+3. Составить карту критичных операций: mint, transfer, upgrade, approve
+4. Перечислить инварианты, которые обязаны держаться (например, «total minted ≤ cap»)
+
+**5.2 Stage 2 (CheckRunner) — переписать системный промпт**
+
+Применить приёмы 1, 2, 3, 5, 10:
 
 ```
-Current: "Analyze {target} for security issues."
+Было: "Analyze {target} for security issues."
 
-Better:
-"You are a paid red-team researcher. This function contains 1-3 exploitable 
+Стало:
+"You are a paid red-team researcher. This function contains 1-3 exploitable
 vulnerabilities — your job is to find them, not decide if they exist.
 
 Attacker model: remote unauthenticated user, access to public-facing functions only.
@@ -153,17 +129,26 @@ For each vulnerability found:
 How would you break {function_name}?"
 ```
 
-### Stage 3 (Synthesis)
-Iterative escalation (technique 9): after Stage 2 findings, ask "what subtle issues are easy to miss when these findings are already known?"
+**Обязательная оговорка**: формулировка «здесь точно есть 1-3 уязвимости» намеренно завышает recall. Она допустима только потому, что за ней стоит conjunction check и PoC-верификация, которые убивают неподтверждённые кандидаты. Без этой ступени приём нарушает принципы `docs/eval-principles.md`.
 
-### Verification (Phase 8)
-Author's verifier loop maps to our PoC pipeline:
-- Unit/integration tests
-- Sanitizer builds
-- Lightweight fuzzers
-- Static analysis (Slither)
-- Policy checks ("authz must gate these endpoints")
+**5.3 Stage 3 (Synthesis) — итеративная эскалация**
 
-### Token budget
-Our `token_budget_used` tracking in `AuditSession` aligns with author's distribution.
-Target: Stage 1 < 10%, Stage 2 60-80%, Stage 3 + PoC 20-30%.
+Приём 9: после находок Stage 2 спросить «какие тонкие проблемы легко упустить, когда эти находки уже известны?».
+
+**5.4 Verification (Phase 8) — verifier loop автора ложится на наш PoC-пайплайн**
+
+Unit/integration тесты, sanitizer-сборки, лёгкие фаззеры, статический анализ (Slither), policy checks («authz должен закрывать эти точки входа»).
+
+**5.5 Token budget**
+
+Наш учёт `token_budget_used` в `AuditSession` согласуется с распределением автора. Целевое: Stage 1 < 10%, Stage 2 60-80%, Stage 3 + PoC 20-30%.
+
+---
+
+## 6. ВОПРОСЫ
+
+- Какова цена приёмов 1/4/7 в false positives? Нужен собственный замер precision на eval-наборе до включения их в Stage 2.
+- Переносится ли «2-3× больше находок» от инверсии вопроса на Solidity, или это эффект специфики web-кодбейзов?
+- Какой размер среза оптимален для смарт-контрактов — функция, контракт, кластер по общему storage (ср. State Interference Graph в [[2606.05986-attackpathgnn]])?
+- Работает ли распределение 10/70/20 при нашей стоимости PoC-верификации, которая заметно дороже, чем «запустить фаззер»?
+- Как измерять «attention dilution» количественно, чтобы выбирать порог нарезки, а не подбирать его на глаз?

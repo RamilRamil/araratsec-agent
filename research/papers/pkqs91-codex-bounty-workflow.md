@@ -1,127 +1,149 @@
-# pkqs91: $200k Web3 Bug Bounties with Codex
+# Анализ источника: pkqs91 — $200k багбаунти на Codex
 
-**Source**: https://x.com/pkqs91/status/2070157806104457395
-**Author**: pkqs91 (independent security researcher)
-**Context**: Practical account of using OpenAI Codex as an AI audit agent for web3 bug bounties
-
----
-
-## Key numbers
-
-- $200,000 from web3 bug bounties using AI-assisted workflow
-- 6 ChatGPT Pro accounts at peak ($1,200/month) — ~$14,500 estimated API cost over 7 days
-- Targets: EVM contracts, Solana, Cosmos, ZK systems, bridges
+## Метаданные
+- **Название**: $200k Web3 Bug Bounties with Codex
+- **Авторы**: pkqs91 (независимый security-исследователь)
+- **Год / Venue**: 2026, X/Twitter thread (practitioner report)
+- **arXiv / DOI**: — · https://x.com/pkqs91/status/2070157806104457395
+- **Источник**: blockthreat.com newsletter
+- **Контекст**: практический отчёт об использовании OpenAI Codex как AI-агента аудита для web3-багбаунти
 
 ---
 
-## 3-step workflow
+## 1. СУТЬ
+
+Работающий AI-харнесс для багбаунти строится не как «найди все баги», а как воронка «explore wide → exploit deep → kill most»: параллельные pattern-скауты набирают широкий фронт слабых лидов, адаптивный lead bank перераспределяет внимание, а жёсткая верификация из 6 вопросов убивает большинство кандидатов до подачи.
+
+---
+
+## 2. МЕТОД
+
+**Тип работы**: practitioner report, без контролируемого эксперимента. Метрика — заработанные деньги.
+
+**Ключевые числа:**
+- $200 000 с web3-багбаунти на AI-ассистированном воркфлоу
+- 6 аккаунтов ChatGPT Pro на пике ($1 200/мес) — ~$14 500 оценочной стоимости API за 7 дней
+- Цели: EVM-контракты, Solana, Cosmos, ZK-системы, мосты
+
+### Воркфлоу из 3 шагов
 
 ```
-Intake    → messy target → local research bundle
-           (scope, severity rules, exclusions, docs, code, context)
+Intake    → грязная цель → локальный research bundle
+           (scope, правила severity, исключения, доки, код, контекст)
 
 Hunting   → explore wide, exploit deep
-           (parallel pattern scouts → adaptive lead bank → deep chain tracing)
+           (параллельные pattern scouts → adaptive lead bank → deep chain tracing)
 
-Verification → kill most candidates
-              (scope check, guard check, economic feasibility, impact check)
+Verification → убить большинство кандидатов
+              (scope check, guard check, экономическая осуществимость, impact check)
 ```
 
----
+### «Explore wide, exploit deep» — базовая ментальная модель
 
-## "Explore wide, exploit deep" — core mental model
+**Explore wide**: покрыть максимум поверхности параллельно — активы, точки входа, trust boundaries, инварианты; известные паттерны И скучные углы. Минус: большинство лидов слабые / вне scope / неэксплуатируемые.
 
-**Explore wide**: cover maximum surface area in parallel
-- Assets, entrypoints, trust boundaries, invariants
-- Known patterns AND boring corners
-- Downside: most leads are weak / out of scope / not exploitable
+**Exploit deep**: взять один перспективный лид и довести до реального impact — потеря средств? несанкционированный минт? падение цепочки? манипуляция governance? Каждый лид должен заслужить право на ресурсы.
 
-**Exploit deep**: take one promising lead and push to real impact
-- Loss of funds? Unauthorized minting? Chain crash? Governance manipulation?
-- Each lead must earn its way to concrete impact
+Это модель pull, а не push — слабые лиды умирают быстро, сильные получают больше ресурсов.
 
-This is a pull, not push model — weak leads die fast, strong leads get more resources.
+### Основной цикл из 5 частей
 
----
+1. **Problem frame** — scope + доки + код + правила severity + семантическая карта + **impact map**. «Найди баги» слишком расплывчато; агент должен знать, какой impact важен именно для ЭТОЙ цели.
+2. **Параллельное исследование** — pattern scouts делят цель по площади поверхности. У каждого скаута своя форма триггера: краевые случаи учёта, странности парсера, ошибки на trust boundary, расхождения доки/код.
+3. **Adaptive lead bank** — слабые сигналы сливаются, ранжируются, убиваются или продвигаются. Перераспределять внимание вместо равного отношения ко всем лидам.
+4. **Параллельное углубление** — каждая трассировка цепочки: вход атакующего → sink с impact. Обязательный выход: вход + trust boundary + переход состояния + нарушенный инвариант + impact + недостающее доказательство.
+5. **End-to-end тестирование** — до этого гейта доходят только сильнейшие кандидаты. Воспроизводится ли путь и можно ли его защитить?
 
-## 5-part core loop
+### Вопросы верификации (убивают большинство кандидатов)
 
-1. **Problem frame** — scope + docs + code + severity rules + semantic map + **impact map**
-   - "Find bugs" is too vague
-   - Agent needs to know what impact actually matters for THIS target
+1. Это в scope?
+2. Точка входа действительно доступна атакующему?
+3. Нужна ли для атаки ошибка привилегированной роли?
+4. Есть ли on-chain guard, убивающий этот путь?
+5. Экономически ли осуществима атака?
+6. Действительно ли impact важен?
 
-2. **Parallel exploration** — pattern scouts split target by surface area
-   - Each scout has a trigger shape to look for
-   - Accounting edges, parser weirdness, trust-boundary mistakes, docs/code mismatches
+**Правило**: если не можешь объяснить находку, воспроизвести её и защитить impact — не подавай.
 
-3. **Adaptive lead bank** — weak signals merged, ranked, killed, or promoted
-   - Reallocate attention instead of treating every lead equally
-   - Demote leads that die, promote leads that deepen
+### Что не сработало
 
-4. **Parallel deepening** — each chain trace: attacker input → impact sink
-   - Required output: input + trust boundary + state transition + broken invariant + impact + missing proof
+**Слишком много паттернов багов** → поверхностные аналогии → выход превращается в шум. Первая версия оказалась хуже, чем «Find all bugs, make no mistakes». Паттерны помогают, только когда они точные, а не когда это чеклист.
 
-5. **End-to-end testing** — only strongest candidates reach this gate
-   - Can the path be reproduced and defended?
+**Нет eval-датасета** → нельзя понять, стало ли лучше. «Ты меняешь промпт, запускаешь на новой цели, видишь другой выход и думаешь, что улучшил. Чаще всего нет. Ты просто сделал иначе.» Каждое изменение нуждается в регрессионном тесте.
 
----
+**Апгрейды модели значили больше всего** — иногда крупнейшее улучшение давал не переписанный харнесс, а поумневшая модель.
 
-## Verification questions (kills most candidates)
+### Багбаунти против полного аудита — разные цели
 
-1. Is it in scope?
-2. Is the entrypoint really attacker-accessible?
-3. Does the attack require a privileged role to make a mistake?
-4. Is there an on-chain guard that kills the path?
-5. Is the attack economically feasible?
-6. Does the impact actually matter?
-
-**Rule**: If you cannot explain the finding, reproduce it, and defend the impact — don't submit.
-
----
-
-## What didn't work
-
-**Too many bug patterns** → shallow analogies → output becomes noise
-- First version was worse than "Find all bugs, make no mistakes"
-- Patterns help only when they're precise, not when they're a checklist
-
-**No eval dataset** → can't tell if you improved
-- "You change a prompt, run it on a new target, see different output, think you improved. Most of the time you did not. You just made it different."
-- Every change needs a regression test
-
-**Model upgrades mattered most**
-- Sometimes biggest improvement wasn't harness rewrite — it was the model getting better
-
----
-
-## Bug bounty vs full audit — different goals
-
-| | Bug bounty | Full audit |
+| | Багбаунти | Полный аудит |
 |---|---|---|
-| Goal | Find ONE high-impact bug | Broad coverage |
-| AI fit | High — parallel threads, kill junk fast | Lower — researcher responsible for coverage |
-| Workflow | Explore wide → kill most → verify few | Systematic, can't skip areas |
+| Цель | Найти ОДИН high-impact баг | Широкое покрытие |
+| Пригодность AI | Высокая — параллельные потоки, быстро убить мусор | Ниже — за покрытие отвечает исследователь |
+| Воркфлоу | Explore wide → убить большинство → верифицировать немногие | Систематический, области пропускать нельзя |
 
 ---
 
-## Implications for SR-agent
+## 3. СКЕПТИК
 
-### What we have
-- Stage 1 (Discovery) with SIG prioritization ✓
-- Stage 2 (CheckRunner) per-target checklist ✓
-- Verification questions partially in conjunction check ✓
-- Eval infrastructure planned (Phase 9) ✓
+**Насколько доверять числам:**
 
-### What this suggests adding
+- **$200k — метрика выплат, а не качества.** Она смешивает качество харнесса, выбор целей, щедрость программ и скорость подачи. Воспроизводимость на других целях не показана.
+- **Нет контроля.** Неизвестно, сколько тот же исследователь заработал бы без AI. Автор сам признаёт, что крупнейший прирост дал апгрейд модели, а не харнесс — это прямо подрывает атрибуцию результата воркфлоу.
+- **Выжившая ошибка.** Отчёт написан по успешному исходу; сколько исследователей запускали похожие харнессы и не заработали ничего — неизвестно.
+- **Стоимость приведена частично.** ~$14 500 за 7 дней на пике — но полная стоимость всей кампании и доля отклонённых подач (пустая работа) не раскрыты, поэтому реальный ROI не считается.
+- **Самая ценная часть — негативная.** «Слишком много паттернов = шум» и «без eval-датасета улучшения иллюзорны» — это наблюдения, которые невыгодно публиковать, и потому им стоит доверять больше, чем цифре $200k.
 
-**Impact map in AuditInput**
-Currently we have `focus_files` and `exclude_paths` but no explicit "what counts as critical impact for this protocol". pkqs91's harness knew whether loss-of-funds or governance manipulation was the priority — changes how leads are ranked.
+**Вывод по доверию**: цифра дохода нерелевантна для нас, **структура воронки и негативные результаты — релевантны**. Тезис про eval-датасет прямо совпадает с `research/eval.md` и `docs/eval-principles.md`, полученными независимо.
 
-**Adaptive lead bank in Stage 1**
-Our Stage 1 produces a static priority list from SIG. A dynamic version would demote leads that come back clean from Stage 2 and promote leads that show partial precondition matches.
+---
 
-**Verification questions as Stage 2 checklist**
-pkqs91's 6 verification questions map directly onto our precondition framework. Questions 3 and 4 (privileged role + on-chain guard) correspond to our `mitigations_present` field.
+## 4. МОДУЛЬ
 
-**Parallel exploration**
-pkqs91 ran pattern scouts in parallel. Our Stage 2 is sequential (for-loop). For large codebases, parallel Stage 2 workers would match this approach.
+- [x] **Планировщик** — impact map, adaptive lead bank, приоритизация лидов
+- [x] **Оркестратор** — параллельные скауты, гейт верификации
+- [x] **Guardrails** — 6 вопросов верификации как условие подачи находки
+- [x] **LLM-ядро** — вывод «модель важнее харнесса» влияет на выбор модели
+- [ ] Инструменты
+- [ ] Память
+- [ ] I/O
+
+---
+
+## 5. РЕШЕНИЕ
+
+**5.1 Что у нас уже есть**
+
+- Stage 1 (Discovery) с приоритизацией через SIG ✓
+- Stage 2 (CheckRunner) с чеклистом на цель ✓
+- Вопросы верификации частично в conjunction check ✓
+- Eval-инфраструктура запланирована (Phase 9) ✓
+
+**5.2 Impact map в AuditInput — добавить**
+
+Сейчас есть `focus_files` и `exclude_paths`, но нет явного «что считается критичным impact для этого протокола». Харнесс pkqs91 знал, что приоритет — потеря средств или манипуляция governance, и это меняло ранжирование лидов. Словарь для значений даёт [[2606.14554-interoperability-threats]], веса — [[2606.15465-audit-gap]].
+
+**5.3 Adaptive lead bank в Stage 1 — исследовать**
+
+Наш Stage 1 выдаёт статический список приоритетов из SIG. Динамическая версия понижала бы лиды, вернувшиеся из Stage 2 чистыми, и повышала лиды с частичным совпадением предусловий.
+
+**5.4 Вопросы верификации как чеклист Stage 2 — принять**
+
+6 вопросов ложатся прямо на нашу структуру предусловий. Вопросы 3 и 4 (привилегированная роль + on-chain guard) соответствуют полю `mitigations_present`.
+
+**5.5 Параллельное исследование**
+
+pkqs91 запускал pattern scouts параллельно. Наш Stage 2 последовательный (for-loop). Для крупных кодбейзов параллельные воркеры Stage 2 дали бы тот же эффект.
+
+**5.6 Не наращивать библиотеку паттернов**
+
+Прямое предупреждение против соблазна расширять чеклист: точные паттерны > длинный список. Это аргумент держать `BastetTag` компактным и предметным, а не наращивать теги ради покрытия.
+
+---
+
+## 6. ВОПРОСЫ
+
+- Какова была доля отклонённых подач? Без неё precision воронки неизвестна, а именно она нам важнее recall.
+- Как устроен adaptive lead bank технически — что за функция ранжирования, какие сигналы в неё входят?
+- Насколько 6 вопросов верификации переносятся с багбаунти (нужен один баг) на полный аудит (нужно покрытие)? Наша задача — второе, а воронка оптимизирована под первое.
+- Сколько LLM-вызовов стоит один параллельный скаут — нужно для оценки бюджета параллельного Stage 2.
+- Можно ли построить наш eval-набор так, чтобы он ловил именно «сделал иначе, а не лучше»? См. `research/eval.md`.
