@@ -1,4 +1,4 @@
-"""Audit-pack action dispatch (feature 004, R8).
+"""Audit-pack action dispatch (feature 004, R8; feature 003 lookup).
 
 The pack callables the kernel loop delegates to: `dispatch` (read/other actions),
 `execute_confirmed` (approved write_execute), and `persist_finding` (build the
@@ -7,23 +7,24 @@ domain Finding). They receive only the narrow `PackContext` — never the loop.
 `persist_finding` RETURNS the Finding; it does NOT write memory. The kernel owns
 the write and sets `source_type=external_llm_output` (FR-006) — a pack cannot
 forge a tier (there is no memory handle in PackContext).
+
+`dispatch` is a lookup into `AGENT_TOOL_SURFACE`. It does not construct Findings
+(FR-008) and does not run write_execute tools (those go through `execute_confirmed`
+after out-of-band approval).
 """
 from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
 
-from audit_agent.config import config
 from sr_agent.guardrails.sanitize import sanitize
 from sr_agent.models.chat import PoCStatusEvent
-from audit_agent.actions import AuditActionType
-from audit_agent.finding import Finding, Severity
-from audit_agent.tools.onchain import (
-    OnChainError, analyze_transactions, make_alchemy_fetcher,
-)
-from audit_agent.tools.write_execute import run_tests, write_poc
-from sr_agent.tools.readonly import ReadOnlyToolError, read_file, search_code
 from sr_agent.tools.sandbox import SandboxError
+
+from audit_agent.actions import AuditActionType
+from audit_agent.agent_tool_surface import AGENT_TOOL_SURFACE, unavailable_payload
+from audit_agent.finding import Finding, Severity
+from audit_agent.tools.write_execute import run_tests, write_poc
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -47,43 +48,17 @@ def _poc_dir(ctx: "PackContext") -> "Path":
 def dispatch(action: "Action", ctx: "PackContext") -> str:
     """Execute a validated read/other action; return DATA-wrapped output."""
     at = action.action_type
-    params = action.params
-
-    try:
-        # read_file / search_code are kernel-generic ids (D6) — inherited, not in
-        # AUDIT_ACTIONS, but the pack still dispatches their output.
-        if at == "read_file":
-            content = read_file(params["path"], ctx.scope_root)
-            return ctx.wrap_data(content, tool="read_file", path=str(params.get("path", "")))
-
-        if at == "search_code":
-            root = params.get("root", str(ctx.scope_root))
-            # file_ext is REQUIRED kernel-side now (D6): pass the audit default explicitly.
-            hits = search_code(params["pattern"], root, file_ext=".sol")
-            body = "\n".join(f"{h.file}:{h.line}: {h.text}" for h in hits) or "(no matches)"
-            return ctx.wrap_data(body, tool="search_code", path=str(root))
-
-        if at == AuditActionType.analyze_transactions:
-            try:
-                fetcher = make_alchemy_fetcher(config.alchemy_api_key)
-                res = analyze_transactions(
-                    params["address"], int(params.get("from_block", 0)),
-                    int(params.get("to_block", 0)), fetcher, focus=params.get("focus"),
-                )
-                body = "\n".join(res.notes) or "(no notable transactions)"
-                return ctx.wrap_data(body, tool="analyze_transactions", path=params["address"])
-            except OnChainError as e:
-                return ctx.wrap_data(f"TOOL ERROR: {e}", tool="analyze_transactions", path="")
-    except ReadOnlyToolError as e:
-        return ctx.wrap_data(f"TOOL ERROR: {e}", tool=at, path="")
-    except KeyError as e:
-        return ctx.wrap_data(f"TOOL ERROR: missing required param {e}", tool=at, path="")
-
-    # Slither/Mythril and write/execute dispatch land in later blocks.
-    return ctx.wrap_data(
-        f"[STUB] Tool {at!r} not yet implemented.",
-        tool=at, path=str(params.get("path", "")),
-    )
+    entry = AGENT_TOOL_SURFACE.get(at)
+    if entry is None:
+        return ctx.wrap_data(f"TOOL ERROR: unknown action {at!r}", tool=at, path="")
+    if not entry.available:
+        return unavailable_payload(at, entry.missing_precondition, ctx)
+    if entry.executor is None:
+        return ctx.wrap_data(
+            "WRITE_EXECUTE cannot run from dispatch; confirmation required",
+            tool=at, path="",
+        )
+    return entry.executor(action, ctx)
 
 
 def execute_confirmed(action: "Action", ctx: "PackContext") -> "tuple[str, PoCStatusEvent | None]":

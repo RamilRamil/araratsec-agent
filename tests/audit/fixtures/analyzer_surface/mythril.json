@@ -1,0 +1,13 @@
+{
+  "error": null,
+  "success": true,
+  "issues": [
+    {
+      "title": "External Call To User-Supplied Address",
+      "swc-id": "107",
+      "severity": "Low",
+      "function": "withdraw(uint256)",
+      "description": "A call to a user-supplied address is executed."
+    }
+  ]
+}

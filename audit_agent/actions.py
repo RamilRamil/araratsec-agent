@@ -75,10 +75,10 @@ def _validate_params(action: "Action", scope_root: Path) -> str | None:
     params = action.params
 
     if action.action_type == AuditActionType.run_slither:
-        return _check_filepath(params.get("target"), scope_root)
+        return _check_filepath(params.get("target"), scope_root, require_str=True)
 
     if action.action_type == AuditActionType.run_mythril:
-        return _check_filepath(params.get("target"), scope_root)
+        return _check_filepath(params.get("target"), scope_root, require_str=True)
 
     if action.action_type == AuditActionType.analyze_transactions:
         address = params.get("address")

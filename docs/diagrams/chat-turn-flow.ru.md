@@ -55,7 +55,7 @@ sequenceDiagram
         end
         alt next_action == complete
             Loop-->>CLI: TurnResult(completed, answer, tier)
-        else read_file / search_code
+        else read_file / search_code / run_slither / run_mythril
             Loop->>Loop: validate_action → _dispatch → wrap_data(result)
             Note over Loop: результат снова входит как DATA на след. итерации<br/>бюджет tool-call (SC-005)
         else write_poc / run_tests (необратимо)

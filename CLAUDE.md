@@ -9,7 +9,7 @@ Eval / PoC truthfulness: `docs/eval-principles.md`.
 PoC runner target-side harness (scaffold, RPC, what the agent will not bootstrap):
 `docs/poc-target-prerequisites.md`. Flow: `docs/diagrams/poc-writing-flow.md`.
 
-Active Speckit feature plan: `specs/001-missing-scaffold-honesty/plan.md` — honest handling &
-labeling of missing PoC scaffold prerequisites (absent-base short-circuit → `base-insufficient`;
-doc/taxonomy reconciliation). Status: implemented (all tasks done; 233 tests green, awaiting commit).
+Active Speckit feature plan: `specs/003-agent-tool-surface/plan.md` - executable agent
+tool surface (offered `run_slither` / `run_mythril` via lookup dispatch; vocabulary derived
+from the contract). Status: implemented (all tasks done).
 <!-- SPECKIT END -->
