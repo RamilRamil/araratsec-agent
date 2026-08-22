@@ -4,7 +4,7 @@ Returns the container ONLY for an unambiguously-nested struct/enum (one containe
 top-level match); None otherwise — so the guard/grounding/hint never touch a top-level or
 ambiguous name.
 """
-from scripts.solidity_index import SymbolIndex
+from audit_agent.proof.solidity_index import SymbolIndex
 
 
 def test_nested_struct_returns_container():

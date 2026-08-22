@@ -42,6 +42,10 @@ sources:
   Discovery → CheckRunner → Synthesis.
 - **Рассуждение + эскалация** (`reasoning.py`, `escalation.py`) — системный промпт аудит-чата и
   доменные триггеры эскалации, инъектируемые в общую машинерию ядра.
+- **Библиотека proof** (`proof/`) — чистые модули без вызова модели, которые
+  batch-раннер импортирует как библиотеку. Не предлагаются как agent tools.
+  На пути агента авторитетный цикл — kernel `OrchestratorLoop`;
+  `scripts/exploit_loop.py` — только batch-производитель PoC-кода.
 - **Сборка** (`pack.py`) — `AUDIT_PACK`, тот `CapabilityPack`, который composition roots передают
   ядру.
 

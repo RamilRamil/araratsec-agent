@@ -1,9 +1,9 @@
-"""Unit tests for scripts/compiled_checkpoint.py (feature 043)."""
+"""Unit tests for audit_agent/proof/compiled_checkpoint.py (feature 043)."""
 from __future__ import annotations
 
 from pathlib import Path
 
-from scripts import compiled_checkpoint as cc
+from audit_agent.proof import compiled_checkpoint as cc
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "compiled_checkpoint"
 

@@ -65,7 +65,12 @@ def test_direct_store_injection(memory):
 
 
 def test_partial_corruption(memory):
-    """Corrupt 2 of 5 records → 3 valid returned, 2 silently dropped, no exception."""
+    """Corrupt 2 of 5 signed records -> fail-closed withholds the whole file from load.
+
+    Kernel composition (pinned 0e4e963) withholds a target file once any record fails
+    verification, rather than returning a partial subset. verify_integrity still reports
+    the per-record counts for the operator channel.
+    """
     for i in range(5):
         memory.write(_make_record(f"H-{i}"))
 
@@ -78,7 +83,7 @@ def test_partial_corruption(memory):
     path.write_text("\n".join(lines) + "\n")
 
     loaded = memory.load("proj1", "Vault.sol")
-    assert len(loaded) == 3  # 2 dropped silently, no exception raised
+    assert len(loaded) == 0  # fail-closed: broken composition, nothing re-enters context
 
     report = memory.verify_integrity("proj1")
     assert (report.total, report.valid, report.invalid) == (5, 3, 2)

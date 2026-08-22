@@ -22,7 +22,7 @@ import os
 import re
 from pathlib import Path
 
-from scripts.solidity_utils import (
+from audit_agent.proof.solidity_utils import (
     POC_SUBDIR, _SKIP_DIRS, _path_for, _scaffold_base_name, _tracked_sol,
 )
 

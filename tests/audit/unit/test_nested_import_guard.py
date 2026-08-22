@@ -4,8 +4,8 @@ Removes the nested named-import, ensures the container is imported, AND rewrites
 bare uses to `Container.Type` (required - the model uses these types bare, so fixing only the
 import would leave an undefined identifier). Touches only unambiguously-nested names.
 """
-from scripts.solidity_fixers import _fix_nested_type_imports
-from scripts.solidity_index import SymbolIndex
+from audit_agent.proof.solidity_fixers import _fix_nested_type_imports
+from audit_agent.proof.solidity_index import SymbolIndex
 
 _SRC = "interface I { struct S { uint32 a; } enum E { X } function f(S calldata s) external; }"
 _FM = "I: ../../contracts/I.sol"

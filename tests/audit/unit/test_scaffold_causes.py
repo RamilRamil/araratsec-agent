@@ -11,7 +11,7 @@ All synthetic - invented names only, no target material.
 """
 from __future__ import annotations
 
-import scripts.scaffold_causes as sc
+import audit_agent.proof.scaffold_causes as sc
 
 # ── T004: classify_build_failure table ───────────────────────────────────────
 _PATH = 'Error: Source "_synth/SynthBase_1.sol" not found. Searched: /work'

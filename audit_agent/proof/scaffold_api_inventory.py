@@ -12,7 +12,7 @@ from pathlib import Path
 
 from solidity_parser import parser as _sol_parser
 
-from scripts.solidity_index import _type_str
+from audit_agent.proof.solidity_index import _type_str
 
 INVENTORY_BUDGET = 4000
 HINT_EXCERPT_BUDGET = 1500

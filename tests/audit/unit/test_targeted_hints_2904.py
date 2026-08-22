@@ -5,7 +5,7 @@
 advice).
 """
 from scripts.poc_queue_runner import _targeted_hints
-from scripts.solidity_index import SymbolIndex
+from audit_agent.proof.solidity_index import SymbolIndex
 
 _IDX = SymbolIndex.build_from_source("interface I { struct S { uint32 a; } }")
 _ERR = 'Error (2904): Declaration "S" not found in "I.sol" (referenced as "../../I.sol")'

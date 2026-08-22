@@ -14,7 +14,7 @@ Boundaries this module deliberately keeps (see specs/017-codegraph-comprehension
     NEVER model grounding, an authorization input, or part of the trust hierarchy
     (enforced by tests/architecture/test_codegraph_isolation.py).
   - graphify cannot parse Solidity; audit-target grounding stays solely with
-    scripts/solidity_index.py's SymbolIndex. This tool is for our own code only.
+    audit_agent/proof/solidity_index.py's SymbolIndex. This tool is for our own code only.
 """
 from __future__ import annotations
 

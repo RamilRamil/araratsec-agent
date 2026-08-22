@@ -26,7 +26,7 @@ import glob
 import json
 from collections import Counter, defaultdict
 
-import scripts.scaffold_causes as sc
+import audit_agent.proof.scaffold_causes as sc
 
 # Legacy (pre-instrumentation) scaffold events - used only to count `unattributed`.
 _LEGACY_SCAFFOLD = {

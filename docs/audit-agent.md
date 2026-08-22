@@ -42,6 +42,10 @@ contracts and ingests untrusted tool output all day).
   continue in a new session. SmartGraphical is off on both surfaces.
 - **Reasoning + escalation** (`reasoning.py`, `escalation.py`) — the audit chat system
   prompt and domain escalation triggers, injected into the kernel's generic machinery.
+- **Proof library** (`proof/`) — pure, model-free modules the batch runner
+  uses as a library (index, fixers, scaffold, reconstruct). Not offered as
+  agent tools. The agent path's loop is the kernel `OrchestratorLoop`;
+  `scripts/exploit_loop.py` is the batch PoC-code producer only.
 - **Assembly** (`pack.py`) — `AUDIT_PACK`, the `CapabilityPack` the composition roots
   hand to the kernel.
 

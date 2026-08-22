@@ -11,7 +11,7 @@ generated:
 sources:
   - resource: scripts/poc_queue_runner.py
     title: PoC queue runner
-  - resource: scripts/scaffold_causes.py
+  - resource: audit_agent/proof/scaffold_causes.py
     title: cause → nature map
   - resource: scripts/capability_screen.py
     title: measurement cascade
@@ -28,7 +28,7 @@ today**; stages 14–15 are **where today's judgement is still manual** — see
 [Where quality triage fits](#where-quality-triage-fits).
 
 Inner draft→compile→fix loop detail: [poc-writing-flow.md](poc-writing-flow.md).
-Cause→nature accounting: `scripts/scaffold_causes.py`. Measurement cascade:
+Cause→nature accounting: `audit_agent/proof/scaffold_causes.py`. Measurement cascade:
 `scripts/capability_screen.py`. Operator prerequisites: [../poc-target-prerequisites.md](../poc-target-prerequisites.md).
 
 ```mermaid

@@ -171,4 +171,4 @@ strategy + cooldowns, которые нужны сьюту, и хелперы д
 - [audit-agent.ru.md](audit-agent.ru.md) — поверхности пака, включая PoC-раннер
 - [eval-principles.ru.md](eval-principles.ru.md) — mutation-verify / передачи оператору fix_patch
 - `scripts/poc_queue_runner.py` — `resolve_scaffold`, `scaffold_missing_types`, `synthesize_scaffold`
-- `scripts/scaffold_causes.py` — карта cause → nature (`harness-infra` vs `model`)
+- `audit_agent/proof/scaffold_causes.py` — карта cause → nature (`harness-infra` vs `model`)

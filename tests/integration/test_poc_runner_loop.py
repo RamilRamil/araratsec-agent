@@ -19,7 +19,7 @@ from pathlib import Path
 import pytest
 
 import scripts.poc_queue_runner as pqr
-from scripts.solidity_index import SymbolIndex
+from audit_agent.proof.solidity_index import SymbolIndex
 from sr_agent.eval.tracer import NOOP_TRACER
 from audit_agent.tools.write_execute import TestResult as _ForgeResult
 

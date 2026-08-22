@@ -18,9 +18,9 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-_SCRIPTS = Path(__file__).resolve().parents[3] / "scripts"
-_FIXERS_SRC = (_SCRIPTS / "solidity_fixers.py").read_text()
-_PQR_SRC = (_SCRIPTS / "poc_queue_runner.py").read_text()
+_REPO = Path(__file__).resolve().parents[3]
+_FIXERS_SRC = (_REPO / "audit_agent" / "proof" / "solidity_fixers.py").read_text()
+_PQR_SRC = (_REPO / "scripts" / "poc_queue_runner.py").read_text()
 
 # The four named sequence-functions (one per site's sequence; _seq_postmodel serves BOTH post-model
 # sites — draft & fix — whose sequences are byte-identical, the site-specific `stage` is caller-side).
