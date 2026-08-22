@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from scripts.scaffold_api_inventory import (
+from audit_agent.proof.scaffold_api_inventory import (
     HINT_EXCERPT_BUDGET,
     INVENTORY_BUDGET,
     build_inventory,

@@ -5,7 +5,7 @@
 instead of inventing them. The on-demand lookup (which already returns fields, research R2)
 is unchanged.
 """
-from scripts.solidity_index import SymbolIndex, expand_referenced_types
+from audit_agent.proof.solidity_index import SymbolIndex, expand_referenced_types
 
 _SRC = ("interface I { enum E { X, Y } struct S { uint32 a; E e; } "
         "struct Other { uint256 z; } function f(S calldata s) external; }")

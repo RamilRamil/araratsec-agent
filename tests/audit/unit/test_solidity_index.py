@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.solidity_index import SymbolIndex
+from audit_agent.proof.solidity_index import SymbolIndex
 
 FIXTURE_SRC = """
 pragma solidity ^0.8.28;

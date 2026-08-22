@@ -4,8 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import scripts.scaffold_reachability as sr
-from scripts.scaffold_api_inventory import InventoryStateVar, ScaffoldApiInventory
+import audit_agent.proof.scaffold_reachability as sr
+from audit_agent.proof.scaffold_api_inventory import InventoryStateVar, ScaffoldApiInventory
 
 FIX = Path(__file__).resolve().parents[2] / "fixtures" / "scaffold_reachability"
 TR = FIX / "traces"
@@ -905,7 +905,7 @@ def test_fix_wiring_receivers_retargets_wrong_type():
 # ── Feature 047 US1: synth-scoped, subtype-aware, masking-safe receiver fix ────
 # All names invented/synthetic (FR-010). Index built offline via build_from_source.
 
-from scripts.solidity_index import SymbolIndex  # noqa: E402
+from audit_agent.proof.solidity_index import SymbolIndex  # noqa: E402
 
 
 def _synth_index(extra: str = "") -> SymbolIndex:

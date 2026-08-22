@@ -26,7 +26,7 @@ sources:
 [Куда ложится триаж качества](#куда-ложится-триаж-качества).
 
 Детали внутреннего цикла draft→compile→fix: [poc-writing-flow.md](poc-writing-flow.md) (EN).
-Учёт cause→nature: `scripts/scaffold_causes.py`. Измерительный каскад:
+Учёт cause→nature: `audit_agent/proof/scaffold_causes.py`. Измерительный каскад:
 `scripts/capability_screen.py`. Требования оператора: [../poc-target-prerequisites.md](../poc-target-prerequisites.md) (EN).
 
 ```mermaid

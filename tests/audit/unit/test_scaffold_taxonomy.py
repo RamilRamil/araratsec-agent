@@ -172,13 +172,13 @@ def test_classifier_imports_are_allowlisted():
     imported: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
-            imported.update(a.name.split(".")[0] for a in node.names)
+            imported.update(a.name for a in node.names)
         elif isinstance(node, ast.ImportFrom) and node.module:
-            imported.add(node.module.split(".")[0])
-            if node.module == "scripts":
-                imported.update(f"scripts.{a.name}" for a in node.names)
-    allowed = {"__future__", "argparse", "glob", "json", "collections",
-               "scripts", "scripts.scaffold_causes"}
+            imported.add(node.module)
+    allowed = {
+        "__future__", "argparse", "glob", "json", "collections",
+        "audit_agent.proof.scaffold_causes",
+    }
     assert imported <= allowed, f"unexpected imports (Principle IV): {imported - allowed}"
 
 

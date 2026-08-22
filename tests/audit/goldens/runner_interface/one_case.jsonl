@@ -1,0 +1,4 @@
+{"event": "extracted", "ids": ["H-01"], "run_id": "run-synthetic"}
+{"event": "written", "finding_id": "H-01", "run_id": "run-synthetic"}
+{"event": "tested", "finding_id": "H-01", "compiled": true, "real_pass": true, "exit_code": 0, "stderr_tail": "", "stdout_tail": "Suite result: ok", "tokens": 12, "run_id": "run-synthetic"}
+{"event": "task_done", "finding_id": "H-01", "outcome": "passed_verified", "verify_reason": "broke_on_fix", "elapsed_s": 1.5, "run_id": "run-synthetic"}

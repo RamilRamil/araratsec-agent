@@ -51,25 +51,26 @@ from sr_agent.tools.sandbox import DockerSandbox, Mount, SandboxError, SandboxUn
 from audit_agent.tools.write_execute import run_tests, write_poc
 from sr_agent.eval.tracer import NOOP_TRACER, Tracer
 
-from scripts.patch_reconstruct import ReconstructionRefused, reconstruct
+from audit_agent.proof.patch_reconstruct import ReconstructionRefused, reconstruct
 from scripts import exploit_loop  # feature 036: the opt-in agentic exploit loop instrument
-from scripts import scaffold_causes as _sc  # feature 040: shared cause→nature taxonomy (emission side)
-from scripts.solidity_index import SymbolIndex, expand_referenced_types
-from scripts import scaffold_api_inventory as _sai  # feature 041
-from scripts import scaffold_reachability as sreach  # feature 042
-from scripts import compiled_checkpoint as cchk  # feature 043
-from scripts import observed_fork_grounding as ofg  # feature 045 Phase A
-from scripts import anti_mock_grounding as amg  # feature 044 PART 3
-from scripts.solidity_utils import (  # feature 033: shared low-level helpers (see solidity_utils.py)
+from audit_agent.proof import scaffold_causes as _sc  # feature 040: shared cause->nature taxonomy (emission side)
+from audit_agent.proof.solidity_index import SymbolIndex, expand_referenced_types
+from audit_agent.proof import scaffold_api_inventory as _sai  # feature 041
+from audit_agent.proof import scaffold_reachability as sreach  # feature 042
+from audit_agent.proof import compiled_checkpoint as cchk  # feature 043
+from audit_agent.proof import observed_fork_grounding as ofg  # feature 045 Phase A
+from audit_agent.proof import anti_mock_grounding as amg  # feature 044 PART 3
+from audit_agent.proof.solidity_utils import (  # feature 033: shared low-level helpers
     POC_SUBDIR, _SCAFFOLD_CONTRACT_RE, _SCAFFOLD_IS_RE, _SKIP_DIRS, _path_for,
     _scaffold_base_name, _strip_comments, _tracked_sol,
 )
-# feature 033: the deterministic compile-fixer layer lives in scripts.solidity_fixers now. The
-# two repair loops call the named sequence-functions (_seq_*), so those + _POSTMODEL_EVENT are the
-# ONLY symbols pqr imports from there. The individual _fix_* are NOT re-exported (FR-010 cleanup):
-# every caller - including tests - imports them from scripts.solidity_fixers directly, so a
-# monkeypatch always targets the symbol the _seq_* actually call (no vacuous re-export to patch).
-from scripts.solidity_fixers import (
+# feature 033: the deterministic compile-fixer layer lives in audit_agent.proof.solidity_fixers.
+# The two repair loops call the named sequence-functions (_seq_*), so those + _POSTMODEL_EVENT
+# are the ONLY symbols pqr imports from there. The individual _fix_* are NOT re-exported
+# (FR-010 cleanup): every caller - including tests - imports them from
+# audit_agent.proof.solidity_fixers directly, so a monkeypatch always targets the symbol
+# the _seq_* actually call (no vacuous re-export to patch).
+from audit_agent.proof.solidity_fixers import (
     _POSTMODEL_EVENT, _applied_names, _seq_draft_inplace, _seq_postmodel,
     _seq_synth_prewrite, _seq_synth_repair,
 )
@@ -83,7 +84,7 @@ MODEL_ERRORS = (ModelUnavailableError, GeminiUnavailable, OpenRouterUnavailable)
 # The target project + audit report are ALWAYS supplied by the operator at the
 # CLI (or via POC_PROJECT / POC_REPORT env) and live entirely OUTSIDE this repo.
 # No audited/bug-bounty target is ever hardcoded here - this harness is generic.
-# POC_SUBDIR: imported from scripts.solidity_utils (feature 033)
+# POC_SUBDIR: imported from audit_agent.proof.solidity_utils (feature 033)
 MODEL = "qwen2.5-coder:7b"          # 7b is far more reliable at code than 3b
 
 # The batch can be driven by the local Ollama model (default) or, opt-in, a capable
@@ -572,9 +573,9 @@ def _ident(finding_id: str) -> str:
 
 
 # feature 036: _strip_fences / _SOLIDITY_TOKENS / _extract_solidity moved to
-# scripts.solidity_utils so scripts.exploit_loop shares ONE definition of "what counts
+# audit_agent.proof.solidity_utils so scripts.exploit_loop shares ONE definition of "what counts
 # as code"; re-exported here (byte-identical) for existing call sites.
-from scripts.solidity_utils import (  # noqa: E402
+from audit_agent.proof.solidity_utils import (  # noqa: E402
     _SOLIDITY_TOKENS, _extract_solidity, _strip_fences,
 )
 
@@ -732,7 +733,7 @@ SOURCE_CHAR_BUDGET = 26000  # target + transitive dep interfaces; within num_ctx
 PRIMARY_CHAR_CAP = 10000    # cap each target file so its dep interfaces are never starved
 IMPORT_DEPTH = 2            # follow local imports 2 levels: base contracts (access-control,
                             # cooldown base, …) reach the model, not just direct interfaces
-# _SKIP_DIRS: imported from scripts.solidity_utils (feature 033)
+# _SKIP_DIRS: imported from audit_agent.proof.solidity_utils (feature 033)
 
 
 def _resolve_local_imports(source_path: Path, text: str) -> list[Path]:
@@ -838,7 +839,7 @@ def _foundry_test_dir(project: Path) -> str:
     return "test"
 
 
-# _tracked_sol: imported from scripts.solidity_utils (feature 033)
+# _tracked_sol: imported from audit_agent.proof.solidity_utils (feature 033)
 
 
 def _resolve_scaffold_tokens(project: Path, spec: str) -> tuple[list[Path], list[str]]:
@@ -922,7 +923,7 @@ def _preflight_operator_scaffold(project: Path, spec: str) -> None:
 
 
 # _SCAFFOLD_CONTRACT_RE, _SCAFFOLD_IS_RE, _scaffold_base_name: imported from
-# scripts.solidity_utils (feature 033) - shared by _fix_scaffold_base and read_scaffold.
+# audit_agent.proof.solidity_utils (feature 033) - shared by _fix_scaffold_base and read_scaffold.
 
 
 def read_scaffold(project: Path, paths: list[Path]) -> str:
@@ -1517,7 +1518,7 @@ _ASSERT_RE = re.compile(
 )
 
 
-# _strip_comments: imported from scripts.solidity_utils (feature 033)
+# _strip_comments: imported from audit_agent.proof.solidity_utils (feature 033)
 
 
 def _poc_defects(code: str, target_stems: list[str], scaffold_used: bool = False) -> list[str]:
@@ -1548,9 +1549,9 @@ def _poc_defects(code: str, target_stems: list[str], scaffold_used: bool = False
 
 
 # feature 036: _RAN_TEST_RE / _compiled / _error_signature / _fail_signature moved to
-# scripts.solidity_utils so scripts.exploit_loop can reuse them without importing this
+# audit_agent.proof.solidity_utils so scripts.exploit_loop can reuse them without importing this
 # heavy module; re-exported here (byte-identical behaviour) for existing call sites.
-from scripts.solidity_utils import (  # noqa: E402
+from audit_agent.proof.solidity_utils import (  # noqa: E402
     _RAN_TEST_RE, _compiled, _error_signature, _fail_signature,
 )
 
@@ -1563,7 +1564,7 @@ def _sigs_for(callable_api: str, contract: str) -> str:
     return ""
 
 
-# _path_for: imported from scripts.solidity_utils (feature 033)
+# _path_for: imported from audit_agent.proof.solidity_utils (feature 033)
 
 
 # The five named transform-application sequence-functions (_seq_synth_prewrite/_seq_synth_repair/

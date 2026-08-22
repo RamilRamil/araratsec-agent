@@ -9,11 +9,11 @@ Eval / PoC truthfulness: `docs/eval-principles.md`.
 PoC runner target-side harness (scaffold, RPC, what the agent will not bootstrap):
 `docs/poc-target-prerequisites.md`. Flow: `docs/diagrams/poc-writing-flow.md`.
 
-Active Speckit feature plan: `specs/004-audit-loop-methodology/plan.md` -
-methodology stages as pack actions on `KernelActionExecutor`; pure
-`AuditMethodologyService`; chat/batch parity; resume without `Path(".")`.
-Status: closed on `main` (#7 goldens, #8 implementation; T001-T060).
-Kernel pairing `003-dispatch-result-resume` is merged (`3675bac`).
-Feature `003-agent-tool-surface` is implemented. Characterization
-goldens are on `main` under `tests/audit/goldens/methodology/` (SC-010).
+Active Speckit feature plan: `specs/006-capability-consolidation/plan.md` -
+status **closed** on branch `006-capability-consolidation`. Ten pure proof
+modules live in `audit_agent/proof/`; runner interface contract guarded;
+instruments stay outside; `exploit_loop` remains the batch producer; kernel
+loop is agent-path authority. Kernel pin `0e4e963`
+(`kernel/005-finding-provenance`). pack/004 closed on `main`. **pack/005
+proof-loop-closure is unblocked** (006 was its start blocker).
 <!-- SPECKIT END -->

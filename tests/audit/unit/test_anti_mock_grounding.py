@@ -9,7 +9,7 @@ import inspect
 import re
 from pathlib import Path
 
-from scripts import anti_mock_grounding as amg
+from audit_agent.proof import anti_mock_grounding as amg
 
 
 # ── SC-001: present when scaffold carried, absent + byte-stable when not, idempotent ──

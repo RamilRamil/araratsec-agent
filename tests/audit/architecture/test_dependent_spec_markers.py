@@ -19,6 +19,6 @@ def test_dependent_specs_carry_finding_grounding_rules():
     spec_005 = _SPEC_005.read_text()
     assert "FR-016" in spec_004
     assert "not analyzer evidence" in spec_004
-    assert "FR-008a" in spec_005
-    assert "hard start blocker" in spec_005
     assert "FR-019" in spec_005
+    assert "kernel/005-finding-provenance" in spec_005
+    assert "audit_agent/proof" in spec_005 or "action_operation_id" in spec_005

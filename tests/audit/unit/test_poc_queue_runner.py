@@ -14,8 +14,8 @@ from pathlib import Path
 import pytest
 
 import scripts.poc_queue_runner as pqr
-import scripts.solidity_fixers as sf
-from scripts.solidity_index import SymbolIndex
+import audit_agent.proof.solidity_fixers as sf
+from audit_agent.proof.solidity_index import SymbolIndex
 
 FIRST_SRC = """
 pragma solidity ^0.8.28;
@@ -1686,7 +1686,7 @@ def test_code_version_is_a_string():
 
 
 # ── Feature 040 US1: exactly one terminal per accounting unit (T009) ─────────
-import scripts.scaffold_causes as _sc  # noqa: E402  (target-free shared taxonomy)
+import audit_agent.proof.scaffold_causes as _sc  # noqa: E402  (target-free shared taxonomy)
 
 
 def _terminals(events, level):
@@ -1982,7 +1982,7 @@ def _pf_args(project: Path, attempts: int = 4):
 
 def test_042_synthesize_scaffold_prompt_and_reachability_out(tmp_path, monkeypatch):
     """T022: matching pattern → synthesis extras + reachability_out; non-match → no finding_location."""
-    from scripts import scaffold_reachability as sreach
+    from audit_agent.proof import scaffold_reachability as sreach
 
     # --- matching config_manager_field ---
     proj = _demo_vault_project(tmp_path / "match")
@@ -2037,7 +2037,7 @@ def test_042_synthesize_scaffold_prompt_and_reachability_out(tmp_path, monkeypat
 def test_042_process_finding_repeat_hint(tmp_path, monkeypatch):
     """T042: streak fires with hypothesis / corroborated forms; no-missing-types has no NameError."""
     from sr_agent.eval.tracer import NOOP_TRACER
-    from scripts import scaffold_reachability as sreach
+    from audit_agent.proof import scaffold_reachability as sreach
 
     proj = _demo_vault_project(tmp_path)
     (proj / "audit" / "poc").mkdir(parents=True, exist_ok=True)

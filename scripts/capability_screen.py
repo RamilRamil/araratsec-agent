@@ -50,7 +50,7 @@ if __package__ in (None, ""):
 
 import scripts.proof_bench as pb
 from scripts.proof_bench import Interval, credible_interval, dominates, resolve
-from scripts.solidity_utils import POC_SUBDIR  # feature 040: the per-run log lives under <project>/<POC_SUBDIR>/_runs
+from audit_agent.proof.solidity_utils import POC_SUBDIR  # feature 040: the per-run log lives under <project>/<POC_SUBDIR>/_runs
 
 _AGENT_ROOT = Path(__file__).resolve().parents[1]
 

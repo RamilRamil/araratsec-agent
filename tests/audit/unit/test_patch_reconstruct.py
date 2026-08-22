@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.patch_reconstruct import ReconstructionRefused, reconstruct
+from audit_agent.proof.patch_reconstruct import ReconstructionRefused, reconstruct
 
 
 def _git_repo(tmp_path: Path, files: dict[str, str]) -> Path:

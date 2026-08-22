@@ -1,7 +1,7 @@
 """Offline Phase A tests for feature 045 (target-free synthetics)."""
 from __future__ import annotations
 
-from scripts import observed_fork_grounding as ofg
+from audit_agent.proof import observed_fork_grounding as ofg
 
 
 def test_discipline_appended_only_for_state_heavy():

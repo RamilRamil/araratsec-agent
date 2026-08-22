@@ -168,4 +168,4 @@ Two honesty boundaries follow from this:
 - [audit-agent.md](audit-agent.md) — pack surfaces including the PoC runner
 - [eval-principles.md](eval-principles.md) — mutation-verify / operator fix_patch handoffs
 - `scripts/poc_queue_runner.py` — `resolve_scaffold`, `scaffold_missing_types`, `synthesize_scaffold`
-- `scripts/scaffold_causes.py` — cause → nature map (`harness-infra` vs `model`)
+- `audit_agent/proof/scaffold_causes.py` — cause → nature map (`harness-infra` vs `model`)

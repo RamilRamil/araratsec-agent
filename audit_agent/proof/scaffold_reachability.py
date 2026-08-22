@@ -12,8 +12,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Collection, Literal
 
-from scripts.scaffold_api_inventory import InventoryStateVar, ScaffoldApiInventory
-from scripts.solidity_utils import _fail_signature, _strip_comments
+from audit_agent.proof.scaffold_api_inventory import InventoryStateVar, ScaffoldApiInventory
+from audit_agent.proof.solidity_utils import _fail_signature, _strip_comments
 
 PatternId = Literal["config_manager_field", "role_grant", "parent_attach"]
 

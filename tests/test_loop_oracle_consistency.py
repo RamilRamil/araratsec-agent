@@ -9,7 +9,7 @@ the loop already fixed. See contracts/consistency.md.
 from pathlib import Path
 
 from scripts import exploit_loop as el
-from scripts.solidity_fixers import _seq_postmodel
+from audit_agent.proof.solidity_fixers import _seq_postmodel
 
 
 class _Sym:
@@ -96,7 +96,7 @@ def test_loop_and_fixers_never_set_passed_verified():
     _ASSIGN = _re.compile(r'passed_verified\s*=(?!=)|["\']passed_verified["\']\s*:')
     loop_src = Path(el.__file__).read_text()
     assert not _ASSIGN.search(loop_src), "loop module must not ASSIGN passed_verified (FR-007)"
-    from scripts.solidity_fixers import __file__ as fx_file
+    from audit_agent.proof.solidity_fixers import __file__ as fx_file
     assert not _ASSIGN.search(Path(fx_file).read_text()), "fixers must not ASSIGN passed_verified"
     res = el.LoopResult("triggered", "code", el.LoopState(), 1)
     assert res.triggered is True

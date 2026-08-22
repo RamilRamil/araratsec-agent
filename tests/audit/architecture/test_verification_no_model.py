@@ -6,7 +6,7 @@ anywhere in this path would defeat its reason to exist, the same reason model-as
 for the discovery benchmark. Principles in this repo are guarded by a test; `test_harness_sandbox_only.py`
 sets the precedent for this exact shape (AST over the source, not a runtime probe).
 
-Scope: `scripts/patch_reconstruct.py` (the reconstruction module) must import no LLM client and call
+Scope: `audit_agent/proof/patch_reconstruct.py` (the reconstruction module) must import no LLM client and call
 no `generate`; and `mutation_verify` / `_resolve_fix` in `scripts/poc_queue_runner.py` must not reach
 a generation client. The check is deliberately structural and offline.
 """
@@ -15,7 +15,9 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-_SCRIPTS = Path(__file__).resolve().parents[3] / "scripts"
+_REPO = Path(__file__).resolve().parents[3]
+_SCRIPTS = _REPO / "scripts"
+_PROOF = _REPO / "audit_agent" / "proof"
 
 # Names that would indicate a model is being invoked.
 _MODEL_CALLS = {"generate", "warm", "available"}
@@ -25,7 +27,7 @@ _CLIENT_IMPORTS = {"LocalClient", "GeminiClient", "OpenRouterClient",
 
 def test_patch_reconstruct_imports_no_model_client():
     """The reconstruction module is pure text processing — it must not even import a client."""
-    src = (_SCRIPTS / "patch_reconstruct.py").read_text(encoding="utf-8")
+    src = (_PROOF / "patch_reconstruct.py").read_text(encoding="utf-8")
     tree = ast.parse(src)
     imported: set[str] = set()
     for node in ast.walk(tree):
