@@ -34,8 +34,12 @@ contracts and ingests untrusted tool output all day).
   `smartgraphical` (call-graph / structural analysis), `onchain` (read on-chain state
   via a provider), `write_execute` (write a PoC, run `forge test` — an irreversible,
   confirmation-gated action).
-- **Methodology** (`planner/`, `pipeline.py`) — the 3-stage audit pipeline:
-  Discovery → CheckRunner → Synthesis.
+- **Methodology** (`planner/`, `methodology/`, `pipeline.py`) — Discovery,
+  Check, and Synthesis are pack actions (`run_discovery`, `run_check`,
+  `run_synthesis`, `skip_target`) on `KernelActionExecutor`. Chat and
+  `sr-agent audit` share a pure reducer over a kernel `MemorySnapshot`.
+  Snapshot over 10000 items / 32 MiB fails closed: `complete_session` and
+  continue in a new session. SmartGraphical is off on both surfaces.
 - **Reasoning + escalation** (`reasoning.py`, `escalation.py`) — the audit chat system
   prompt and domain escalation triggers, injected into the kernel's generic machinery.
 - **Assembly** (`pack.py`) — `AUDIT_PACK`, the `CapabilityPack` the composition roots

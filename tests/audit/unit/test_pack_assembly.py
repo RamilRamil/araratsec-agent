@@ -22,6 +22,7 @@ _KERNEL_GENERIC_READS = {"read_file", "search_code"}
 _EXPECTED_DOMAIN = {
     "build_graph", "run_slither", "run_mythril", "analyze_transactions",
     "decompile_bytecode", "write_poc", "run_tests", "deploy_test_contract",
+    "run_discovery", "run_check", "run_synthesis", "skip_target",
 }
 
 

@@ -76,7 +76,8 @@ def handle_turn(loop, session, memory, user_message: str):
     from sr_agent.models.memory import SourceType
     from sr_agent.orchestrator.chat_session import save_turn, update_facts
 
-    result = loop.run_turn(user_message, system_prompt="")
+    prompt = "audit.reasoning" if getattr(loop, "_prompt_registry", None) else ""
+    result = loop.run_turn(user_message, system_prompt=prompt)
     # Grounding facts are orchestrator-authored from real results, never model text
     # (US4/R6): known findings + a bounded trail of what's already been looked at,
     # so a long investigation session stays coherent past the model's window.
@@ -564,6 +565,57 @@ def relay_cmd(request_id: str | None, show: bool, respond_file: str | None, list
     sys.exit(2)
 
 
+def _relay_body(request_id: str) -> dict:
+    path = Path(config.relay_root) / "responses" / f"{request_id}.txt"
+    if not path.exists():
+        return {"text": ""}
+    return {"text": path.read_text(encoding="utf-8")}
+
+
+def _handle_operator_command(
+    raw: str,
+    session,
+    memory,
+    audit_root: Path,
+    runtime_roots: tuple[Path, ...],
+    complete_session,
+    abandon_session,
+    reacquire_lease,
+    takeover_lease,
+    rebind_scope,
+) -> None:
+    from sr_agent.orchestrator.scope import ContentScopePolicy
+
+    from audit_agent.methodology.include import AUDIT_INCLUDE
+
+    verb = raw[1:].split(maxsplit=1)[0]
+    rest = raw[1 + len(verb):].strip()
+    try:
+        if verb == "complete":
+            complete_session(session, memory, approved_by="cli-user")
+            click.echo("session completed.")
+        elif verb == "abandon":
+            abandon_session(session, memory, approved_by="cli-user")
+            click.echo("session abandoned.")
+        elif verb == "reacquire":
+            reacquire_lease(session, memory)
+            click.echo("lease reacquired.")
+        elif verb == "takeover":
+            takeover_lease(session, memory, approved_by="cli-user")
+            click.echo("lease taken over.")
+        elif verb == "rebind":
+            include = tuple(p.strip() for p in rest.split(",")) if rest else AUDIT_INCLUDE
+            policy = ContentScopePolicy(
+                scope_root=audit_root, include=include, runtime_state_roots=runtime_roots,
+            )
+            rebind_scope(session, policy, memory=memory, approved_by="cli-user")
+            click.echo("scope rebound.")
+        else:
+            click.echo(f"unknown operator command {verb!r}")
+    except Exception as e:
+        click.echo(f"operator command refused: {e}", err=True)
+
+
 @cli.command("chat")
 @click.argument("project_or_path", required=False)
 @click.option("--resume", "resume_session", default=None, help="Resume a chat session by id")
@@ -580,13 +632,43 @@ def chat_cmd(project_or_path: str | None, resume_session: str | None, project_id
     from sr_agent.llm_core.local_client import LocalClient
     from sr_agent.memory.episodic import EpisodicMemory
     from sr_agent.models.chat import ChatSession
-    from sr_agent.orchestrator.chat_session import load_session, save_session
+    from sr_agent.orchestrator.chat_session import (
+        abandon_session,
+        complete_session,
+        detach_session,
+        load_session,
+        reacquire_lease,
+        save_session,
+        takeover_lease,
+    )
+    from sr_agent.orchestrator.lease import WriterLease
     from sr_agent.orchestrator.loop import OrchestratorLoop
+    from sr_agent.orchestrator.prompts import PromptRegistry
+    from sr_agent.orchestrator.scope import (
+        ContentScopePolicy,
+        ScopeError,
+        bind_scope,
+        rebind_scope,
+        restore_scope_root,
+        verify_content_identity,
+    )
     from audit_agent.escalation import domain_escalation
-    from audit_agent.pack import AUDIT_PACK
+    from audit_agent.methodology.include import AUDIT_INCLUDE
+    from audit_agent.pack import AUDIT_PACK, AUDIT_PRIVILEGED_STATUSES, set_relay_dir, set_snapshot_factory
     from audit_agent.reasoning import AUDIT_CHAT_SYSTEM, signal_from
 
-    memory = EpisodicMemory(config.memory_root, config.secret_key)
+    lease = WriterLease(config.memory_root, config.secret_key)
+    memory = EpisodicMemory(
+        config.memory_root,
+        config.secret_key,
+        privileged_statuses=AUDIT_PRIVILEGED_STATUSES,
+        lease=lease,
+    )
+    runtime_roots = (
+        Path(config.memory_root).resolve(),
+        Path(config.relay_root).resolve(),
+        Path(config.confirmations_root).resolve(),
+    )
 
     if resume_session:
         pid = project_id or project_or_path
@@ -599,22 +681,37 @@ def chat_cmd(project_or_path: str | None, resume_session: str | None, project_id
             sys.exit(2)
         principal = session.principal
         derived_pid = principal.project_id
-        audit_root = Path(".")
-        if session.status in ("paused_relay", "blocked_local_unavailable"):
-            # relay/local resume ingest lands in a later phase.
-            click.echo(f"note: {session.status!r} resume is not wired yet — continuing as a fresh turn.")
+        try:
+            reacquire_lease(session, memory)
+            audit_root = restore_scope_root(session)
+            verify_content_identity(session)
+        except ScopeError as e:
+            click.echo(f"Error: resume refused for target {getattr(session, 'scope_root', None)!r}: {e}", err=True)
+            sys.exit(2)
     else:
         if not project_or_path:
             click.echo("A project id or path is required (or use --resume).", err=True)
             sys.exit(2)
         p = Path(project_or_path)
         if p.exists() and p.is_dir():
-            audit_root, derived_pid = p, (project_id or p.name)
+            audit_root, derived_pid = p.resolve(), (project_id or p.name)
         else:
             audit_root, derived_pid = Path("."), (project_id or project_or_path)
         principal = Principal(user_id="cli-user", platform="cli", project_id=derived_pid)
         session = ChatSession(principal=principal)
+        lease.acquire(derived_pid, session.session_id)
+        policy = ContentScopePolicy(
+            scope_root=audit_root, include=AUDIT_INCLUDE, runtime_state_roots=runtime_roots,
+        )
+        bind_scope(session, policy)
         save_session(session, memory)
+
+    set_relay_dir(config.relay_root)
+    set_snapshot_factory(
+        lambda: memory.snapshot(project_id=derived_pid, session_id=session.session_id)
+    )
+    registry = PromptRegistry()
+    registry.register("audit.reasoning", AUDIT_CHAT_SYSTEM, version="1")
 
     audit_session = AuditSession(
         principal=principal,
@@ -634,11 +731,10 @@ def chat_cmd(project_or_path: str | None, resume_session: str | None, project_id
         session_facts_provider=lambda: _facts_to_str(session.session_facts),
         confirmations_dir=config.confirmations_root,
         chat_model=_router.route("stage2"),
+        prompt_registry=registry,
     )
-    provider.existing_findings = loop._findings  # share for evaluate_triggers (R3)
+    provider.existing_findings = loop._findings
 
-    # Warm the local model once so the first turn's readiness probe doesn't fail on
-    # a cold load (a larger model can take minutes to load on CPU).
     click.echo(f"warming {local_client.model} (first load can take a few minutes on CPU)…")
     if not local_client.warm():
         click.echo(
@@ -646,10 +742,25 @@ def chat_cmd(project_or_path: str | None, resume_session: str | None, project_id
             "'blocked'; it recovers automatically once the model is up."
         )
 
-    # Resuming a session paused on an OOB confirmation: ingest the decision and
-    # finish (or cancel) the write_execute before accepting new input (T018).
     if resume_session and session.status == "paused_confirmation":
         click.echo(resume_confirmation(loop, session, memory))
+    elif resume_session and getattr(session, "continuation", None) is not None:
+        if session.pending_relay_request_id:
+            try:
+                memory.put_external_response_if_absent(
+                    project_id=derived_pid,
+                    target=f"chat:{session.session_id}",
+                    session_id=session.session_id,
+                    operation_id=session.pending_relay_request_id,
+                    correlation_id=session.pending_relay_request_id,
+                    body=_relay_body(session.pending_relay_request_id),
+                )
+            except Exception as e:
+                click.echo(f"Error: ingest refused: {e}", err=True)
+                sys.exit(2)
+        click.echo(format_reply(loop.resume_turn("audit.reasoning")))
+        save_session(session, memory)
+        sys.exit(0)
 
     click.echo(f"chat session {session.session_id} (project {derived_pid}). Ctrl-D to quit.")
     while True:
@@ -657,8 +768,23 @@ def chat_cmd(project_or_path: str | None, resume_session: str | None, project_id
             user_message = click.prompt("you", prompt_suffix="> ")
         except (EOFError, click.exceptions.Abort):
             click.echo("")
+            pending = session.pending_relay_request_id or session.pending_confirmation_id
+            if pending:
+                click.echo("pending turn: detach refused; session stays paused.")
+            else:
+                try:
+                    detach_session(session, memory, approved_by="cli-user")
+                except Exception as e:
+                    click.echo(f"detach refused: {e}", err=True)
             break
-        if not user_message.strip():
+        stripped = user_message.strip()
+        if not stripped:
+            continue
+        if stripped.startswith(":"):
+            _handle_operator_command(
+                stripped, session, memory, audit_root, runtime_roots,
+                complete_session, abandon_session, reacquire_lease, takeover_lease, rebind_scope,
+            )
             continue
         result = handle_turn(loop, session, memory, user_message)
         click.echo(format_reply(result))

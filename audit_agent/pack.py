@@ -20,6 +20,18 @@ from audit_agent.actions import (
 from audit_agent.tool_registry import TOOL_REGISTRY
 from sr_agent.orchestrator.pack import ActionSpec, CapabilityPack
 from audit_agent.dispatch import dispatch, execute_confirmed, persist_finding
+from audit_agent.methodology.adapters import (
+    set_relay_dir,
+    set_snapshot_factory,
+)
+
+__all__ = [
+    "AUDIT_ACTIONS",
+    "AUDIT_PACK",
+    "AUDIT_PRIVILEGED_STATUSES",
+    "set_relay_dir",
+    "set_snapshot_factory",
+]
 from audit_agent.escalation import domain_escalation
 from audit_agent.reasoning import AUDIT_CHAT_SYSTEM, signal_from
 

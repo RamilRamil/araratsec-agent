@@ -78,21 +78,16 @@ def test_tracing_does_not_change_findings_written_to_memory(tmp_path):
 
     session1 = _session("proj-trace-1")
     result1 = run_stage2_local(
-        session1, ["Vault.sol:withdraw"], memory, _FakeClient(_GOOD), lambda t: "code",
+        session1, ["Vault.sol:withdraw"], _FakeClient(_GOOD), lambda t: "code",
         tracer=NOOP_TRACER,
     )
-    records1 = memory.load_for_principal(session1.principal)
-    assert len(records1) == 1
-    assert records1[0].source_type is SourceType.external_llm_output
+    assert len(result1.findings) == 1
 
     session2 = _session("proj-trace-2")
     disabled_tracer = Tracer(secret_key="", public_key="")  # exercises the real call path, still off
     result2 = run_stage2_local(
-        session2, ["Vault.sol:withdraw"], memory, _FakeClient(_GOOD), lambda t: "code",
+        session2, ["Vault.sol:withdraw"], _FakeClient(_GOOD), lambda t: "code",
         tracer=disabled_tracer,
     )
-    records2 = memory.load_for_principal(session2.principal)
-
     assert result1.findings[0].severity == result2.findings[0].severity == Severity.high
-    assert len(records2) == 1
-    assert records1[0].finding == records2[0].finding
+    assert result1.findings[0].model_dump() == result2.findings[0].model_dump()

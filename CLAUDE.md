@@ -9,7 +9,12 @@ Eval / PoC truthfulness: `docs/eval-principles.md`.
 PoC runner target-side harness (scaffold, RPC, what the agent will not bootstrap):
 `docs/poc-target-prerequisites.md`. Flow: `docs/diagrams/poc-writing-flow.md`.
 
-Active Speckit feature plan: `specs/001-missing-scaffold-honesty/plan.md` — honest handling &
-labeling of missing PoC scaffold prerequisites (absent-base short-circuit → `base-insufficient`;
-doc/taxonomy reconciliation). Status: implemented (all tasks done; 233 tests green, awaiting commit).
+Active Speckit feature plan: `specs/004-audit-loop-methodology/plan.md` -
+methodology stages as pack actions on `KernelActionExecutor`; pure
+`AuditMethodologyService`; chat/batch parity; resume without `Path(".")`.
+Status: implemented (tasks T001-T060). Kernel pairing
+`003-dispatch-result-resume` is merged (`3675bac`). Feature
+`003-agent-tool-surface` is implemented. Characterization goldens live
+under `tests/audit/goldens/methodology/`; SC-010 still requires those
+bytes on `main` as their own merge-base.
 <!-- SPECKIT END -->

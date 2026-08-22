@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 dependencies = [
     # The task-agnostic kernel — consumed as a dependency, never vendored (FR-006).
     # Dev uses an editable sibling: `pip install -e ../secure-agent-kernel`.
-    "secure-agent-kernel @ git+https://github.com/RamilRamil/secure-agent-kernel.git@v0.3.0",
+    "secure-agent-kernel @ git+https://github.com/RamilRamil/secure-agent-kernel.git@3675bac",
     # Audit-only dependencies (NOT in the kernel):
     "web3>=7.0.0",          # on-chain reads
     "docker>=7.0.0",        # sandbox containers

@@ -52,7 +52,7 @@ def _manifest(relay_dir: Path, session_id: str) -> dict:
 
 
 def test_emits_requests_and_pauses(session, memory, relay_dir):
-    result = run_stage2(session, ["Vault.sol", "Token.sol"], memory, relay_dir, _context)
+    result = run_stage2(session, ["Vault.sol", "Token.sol"], relay_dir, _context)
     assert result.status == "paused"
     assert result.requested == 2
     assert len(result.pending) == 2
@@ -61,58 +61,55 @@ def test_emits_requests_and_pauses(session, memory, relay_dir):
 
 def test_resume_ingests_after_responses(session, memory, relay_dir):
     # 1. emit + pause
-    run_stage2(session, ["Vault.sol", "Token.sol"], memory, relay_dir, _context)
+    run_stage2(session, ["Vault.sol", "Token.sol"], relay_dir, _context)
     # 2. human answers both
     manifest = _manifest(relay_dir, session.session_id)
     for i, (rid, entry) in enumerate(manifest.items()):
         save_response(rid, relay_dir, _finding_response(f"H-{i}"))
     # 3. resume
-    result = run_stage2(session, ["Vault.sol", "Token.sol"], memory, relay_dir, _context)
+    result = run_stage2(session, ["Vault.sol", "Token.sol"], relay_dir, _context)
     assert result.status == "done"
     assert result.ingested == 2
     assert len(result.findings) == 2
-    # findings written to memory as external_llm_output
-    loaded = memory.load_for_principal(session.principal)
-    assert len(loaded) == 2
-    assert all(r.source_type is SourceType.external_llm_output for r in loaded)
+    assert [f.finding_id for f in result.findings]
 
 
 def test_resume_is_idempotent(session, memory, relay_dir):
-    run_stage2(session, ["Vault.sol"], memory, relay_dir, _context)
+    run_stage2(session, ["Vault.sol"], relay_dir, _context)
     manifest = _manifest(relay_dir, session.session_id)
     rid = next(iter(manifest))
     save_response(rid, relay_dir, _finding_response("H-1"))
 
-    first = run_stage2(session, ["Vault.sol"], memory, relay_dir, _context)
+    first = run_stage2(session, ["Vault.sol"], relay_dir, _context)
     assert first.done and first.ingested == 1
 
     # calling again must not re-request or re-write
-    again = run_stage2(session, ["Vault.sol"], memory, relay_dir, _context)
+    again = run_stage2(session, ["Vault.sol"], relay_dir, _context)
     assert again.done
     assert again.requested == 0
     assert again.ingested == 0
-    assert len(memory.load_for_principal(session.principal)) == 1
+    assert again.findings == []
 
 
 def test_partial_response_stays_paused(session, memory, relay_dir):
-    run_stage2(session, ["Vault.sol", "Token.sol"], memory, relay_dir, _context)
+    run_stage2(session, ["Vault.sol", "Token.sol"], relay_dir, _context)
     manifest = _manifest(relay_dir, session.session_id)
     rid_first = next(iter(manifest))
     save_response(rid_first, relay_dir, _finding_response("H-1"))
 
-    result = run_stage2(session, ["Vault.sol", "Token.sol"], memory, relay_dir, _context)
+    result = run_stage2(session, ["Vault.sol", "Token.sol"], relay_dir, _context)
     assert result.status == "paused"
     assert result.ingested == 1
     assert len(result.pending) == 1
 
 
 def test_malformed_response_stays_pending(session, memory, relay_dir):
-    run_stage2(session, ["Vault.sol"], memory, relay_dir, _context)
+    run_stage2(session, ["Vault.sol"], relay_dir, _context)
     manifest = _manifest(relay_dir, session.session_id)
     rid = next(iter(manifest))
     save_response(rid, relay_dir, "no json here, just prose")
 
-    result = run_stage2(session, ["Vault.sol"], memory, relay_dir, _context)
+    result = run_stage2(session, ["Vault.sol"], relay_dir, _context)
     assert result.status == "paused"
     assert rid in result.pending
-    assert len(memory.load_for_principal(session.principal)) == 0
+    assert result.findings == []

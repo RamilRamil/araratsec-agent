@@ -47,7 +47,7 @@ sequenceDiagram
         end
         alt next_action == complete
             Loop-->>CLI: TurnResult(completed, answer, tier)
-        else read_file / search_code
+        else read_file / search_code / run_slither / run_mythril / run_discovery / run_check / run_synthesis / skip_target
             Loop->>Loop: validate_action → _dispatch → wrap_data(result)
             Note over Loop: result re-enters as DATA next iteration<br/>tool-call budget (SC-005)
         else write_poc / run_tests (irreversible)
@@ -61,8 +61,8 @@ sequenceDiagram
 ## The paused paths (do not block the REPL)
 
 - `paused_confirmation` (write_poc/run_tests): the CLI prints the `ConsequentialActionNotice` and exits; the user approves via `sr-agent confirm <id> --approve` and re-runs `sr-agent chat --resume <id>`, which ingests the decision and runs the action **only then** (`execute_confirmed` is the sole run path — no in-turn shortcut).
-- `paused_relay` (deterministic escalation or model self-report): prints the relay request id and exits; user answers via the `sr-agent relay` flow, then resumes.
-- `blocked_local_unavailable`: prints "local model unavailable"; **no** relay fallback (FR-011); re-run `--resume` once the model is back.
+- `paused_relay` (deterministic escalation, model self-report, or a pending `run_check` relay): prints the relay request id and exits; user answers via the `sr-agent relay` flow, then `sr-agent chat --resume` calls `OrchestratorLoop.resume_turn` (never `run_turn` from the original message) after kernel ingest.
+- `blocked_local_unavailable`: prints "local model unavailable"; **no** relay fallback (FR-011); re-run `--resume` once the model is back. All three pause states share one kernel `pause_checkpoint`. Ctrl-D detaches; it does not complete the audit.
 
 ## Trust invariants preserved (Constitution I/II)
 

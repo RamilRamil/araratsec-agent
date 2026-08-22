@@ -51,6 +51,10 @@ class AuditConfig:
     # SmartGraphical engine (feature 002) — external structural+logic analyzer.
     # Empty string disables the engine; pipeline auto-skips if unset/unavailable.
     smartgraphical_root: str
+    # Chat-path wall-clock bound for blocking offered analyzers (feature 003, D4).
+    # Well below the analyzer default of 300.0 so a hung Slither/Mythril cannot
+    # pin the orchestrator turn for the batch-pipeline budget.
+    chat_tool_timeout_s: float
 
     # Model routing: role → model id. Audit owns the role names and the ids; the
     # kernel router consumes this as an opaque Mapping[str, str] (feature 048).
@@ -72,6 +76,7 @@ def load_audit_config(kernel: KernelConfig | None = None) -> AuditConfig:
             "SR_WORKSPACES_ROOT", str(Path(tempfile.gettempdir()) / "sr-agent-workspaces"))),
         git_token=os.environ.get("GITHUB_TOKEN", ""),
         smartgraphical_root=os.environ.get("SR_SMARTGRAPHICAL_ROOT", ""),
+        chat_tool_timeout_s=30.0,
         model_roles=_default_model_roles(),
     )
 
