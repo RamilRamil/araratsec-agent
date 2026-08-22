@@ -68,11 +68,12 @@ def test_instruction_shaped_detector_text_stays_data(tmp_path):
         Action(action_type="run_slither", params={"target": str(vault)}),
         ctx,
     )
-    start = out.index("[DATA START")
-    inj = out.index(_INJECTION)
-    end = out.index("[DATA END]")
+    body = out.body if hasattr(out, "body") else out
+    start = body.index("[DATA START")
+    inj = body.index(_INJECTION)
+    end = body.index("[DATA END]")
     assert start < inj < end
-    assert "[STUB]" not in out
+    assert "[STUB]" not in body
 
 
 def test_injection_sets_no_privileged_status(tmp_path):

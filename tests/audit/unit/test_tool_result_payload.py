@@ -42,9 +42,14 @@ def _ctx(tmp_path: Path, sandbox: _FakeSandbox) -> PackContext:
     return PackContext(scope_root=tmp_path, sandbox=sandbox, wrap_data=wrap_data)
 
 
-def _status(out: str) -> str:
-    m = _STATUS_RE.search(out)
-    assert m, f"no status= field in {out!r}"
+def _text(out) -> str:
+    return out.body if hasattr(out, "body") else out
+
+
+def _status(out) -> str:
+    blob = _text(out)
+    m = _STATUS_RE.search(blob)
+    assert m, f"no status= field in {blob!r}"
     return m.group(1)
 
 
@@ -62,7 +67,7 @@ def test_environment_failure_is_did_not_run_not_empty_ran(tmp_path):
     assert _status(ran) == "ran"
     assert _status(failed) == "did_not_run"
     assert _status(ran) != _status(failed)
-    assert "[DATA START" in ran and "[DATA START" in failed
+    assert "[DATA START" in _text(ran) and "[DATA START" in _text(failed)
 
 
 def test_timeout_empty_success_and_unavailable_are_distinct(tmp_path):
@@ -89,8 +94,9 @@ def test_timeout_empty_success_and_unavailable_are_distinct(tmp_path):
     assert _status(unavailable) == "unavailable"
     assert _status(slither_err) == "did_not_run"
     for blob in (ran, timed, unavailable, slither_err):
-        assert "[DATA START" in blob and "[DATA END]" in blob
-        assert "[STUB]" not in blob
+        text = _text(blob)
+        assert "[DATA START" in text and "[DATA END]" in text
+        assert "[STUB]" not in text
 
 
 def test_oversized_detector_list_emits_truncation_fields(tmp_path):
@@ -110,11 +116,11 @@ def test_oversized_detector_list_emits_truncation_fields(tmp_path):
         Action(action_type="run_slither", params={"target": str(vault)}),
         _ctx(tmp_path, _FakeSandbox(stdout=raw)),
     )
-    m = _COUNTS_RE.search(out)
-    assert m, f"missing shown/total/omitted in {out!r}"
+    m = _COUNTS_RE.search(_text(out))
+    assert m, f"missing shown/total/omitted in {_text(out)!r}"
     shown, total, omitted = (int(m.group(1)), int(m.group(2)), int(m.group(3)))
     assert total == n
     assert omitted > 0
     assert shown + omitted == total
-    assert "[DATA START" in out
+    assert "[DATA START" in _text(out)
     assert AGENT_TOOL_SURFACE["run_slither"].offered

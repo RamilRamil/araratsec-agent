@@ -18,6 +18,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from sr_agent.guardrails.sanitize import sanitize
+from sr_agent.models.dispatch import DispatchResult, DispatchStatus
 from sr_agent.models.chat import PoCStatusEvent
 from sr_agent.tools.sandbox import SandboxError
 
@@ -45,20 +46,30 @@ def _poc_dir(ctx: "PackContext") -> "Path":
     return ctx.scope_root / "audit" / "poc"
 
 
-def dispatch(action: "Action", ctx: "PackContext") -> str:
-    """Execute a validated read/other action; return DATA-wrapped output."""
+def _as_result(raw: object, *, fallback_body: str = "") -> DispatchResult:
+    if isinstance(raw, DispatchResult):
+        return raw
+    if isinstance(raw, str):
+        return DispatchResult(status=DispatchStatus.ran, body=raw)
+    return DispatchResult(status=DispatchStatus.error, body=fallback_body or str(raw))
+
+
+def dispatch(action: "Action", ctx: "PackContext") -> DispatchResult:
+    """Execute a validated read/other action; return a structured DispatchResult."""
     at = action.action_type
     entry = AGENT_TOOL_SURFACE.get(at)
     if entry is None:
-        return ctx.wrap_data(f"TOOL ERROR: unknown action {at!r}", tool=at, path="")
+        return _as_result(ctx.wrap_data(f"TOOL ERROR: unknown action {at!r}", tool=at, path=""))
     if not entry.available:
-        return unavailable_payload(at, entry.missing_precondition, ctx)
+        return _as_result(unavailable_payload(at, entry.missing_precondition, ctx))
     if entry.executor is None:
-        return ctx.wrap_data(
-            "WRITE_EXECUTE cannot run from dispatch; confirmation required",
-            tool=at, path="",
+        return _as_result(
+            ctx.wrap_data(
+                "WRITE_EXECUTE cannot run from dispatch; confirmation required",
+                tool=at, path="",
+            )
         )
-    return entry.executor(action, ctx)
+    return _as_result(entry.executor(action, ctx))
 
 
 def execute_confirmed(action: "Action", ctx: "PackContext") -> "tuple[str, PoCStatusEvent | None]":
@@ -88,7 +99,7 @@ def execute_confirmed(action: "Action", ctx: "PackContext") -> "tuple[str, PoCSt
         return (summary, PoCStatusEvent(finding_id=finding_id, status=status))
 
     # Any other write_execute (e.g. deploy_test_contract) — no PoC status.
-    return (dispatch(action, ctx), None)
+    return (_as_result(dispatch(action, ctx)).body, None)
 
 
 def persist_finding(payload, ctx: "PackContext") -> "Finding | None":

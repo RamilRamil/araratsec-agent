@@ -41,7 +41,8 @@ def test_each_blocking_offered_analyzer_returns_timeout_within_bound(tmp_path):
         )
         assert fake.calls
         assert fake.calls[0]["timeout_s"] == bound
-        assert "status=timeout" in out
-        assert "status=unavailable" not in out
-        assert "[DATA START" in out
-        assert "[STUB]" not in out
+        body = out.body if hasattr(out, "body") else out
+        assert "status=timeout" in body
+        assert "status=unavailable" not in body
+        assert "[DATA START" in body
+        assert "[STUB]" not in body

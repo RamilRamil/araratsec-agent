@@ -36,6 +36,10 @@ class AuditActionType(str, Enum):
     run_mythril = "run_mythril"
     analyze_transactions = "analyze_transactions"
     decompile_bytecode = "decompile_bytecode"
+    run_discovery = "run_discovery"
+    run_check = "run_check"
+    run_synthesis = "run_synthesis"
+    skip_target = "skip_target"
     # ── WRITE / EXECUTE (kernel derives OOB-confirm from the class) ───────
     write_poc = "write_poc"
     run_tests = "run_tests"
@@ -48,6 +52,10 @@ ACTION_CLASS_MAP: dict[AuditActionType, ActionClass] = {
     AuditActionType.run_mythril: ActionClass.read_only,
     AuditActionType.analyze_transactions: ActionClass.read_only,
     AuditActionType.decompile_bytecode: ActionClass.read_only,
+    AuditActionType.run_discovery: ActionClass.read_only,
+    AuditActionType.run_check: ActionClass.read_only,
+    AuditActionType.run_synthesis: ActionClass.read_only,
+    AuditActionType.skip_target: ActionClass.read_only,
     AuditActionType.write_poc: ActionClass.write_execute,
     AuditActionType.run_tests: ActionClass.write_execute,
     AuditActionType.deploy_test_contract: ActionClass.write_execute,
@@ -59,6 +67,10 @@ REVERSIBLE: dict[AuditActionType, bool] = {
     AuditActionType.run_mythril: True,
     AuditActionType.analyze_transactions: True,
     AuditActionType.decompile_bytecode: True,
+    AuditActionType.run_discovery: True,
+    AuditActionType.run_check: True,
+    AuditActionType.run_synthesis: True,
+    AuditActionType.skip_target: True,
     AuditActionType.write_poc: False,
     AuditActionType.run_tests: False,
     AuditActionType.deploy_test_contract: False,
@@ -87,6 +99,25 @@ def _validate_params(action: "Action", scope_root: Path) -> str | None:
         blocks = params.get("max_blocks", 0)
         if int(blocks) > 10_000:
             return f"analyze_transactions max_blocks limit is 10000, got {blocks}"
+
+    if action.action_type == AuditActionType.run_check:
+        target = params.get("target")
+        if not target or not isinstance(target, str):
+            return "run_check requires 'target' param"
+        file_rel = target.split(":")[0]
+        path = file_rel if Path(file_rel).is_absolute() else str(scope_root / file_rel)
+        return _check_filepath(path, scope_root, require_str=True)
+
+    if action.action_type == AuditActionType.skip_target:
+        target = params.get("target")
+        reason = params.get("reason")
+        if not target or not isinstance(target, str):
+            return "skip_target requires 'target' param"
+        if not reason or not str(reason).strip():
+            return "skip_target requires non-empty 'reason' param"
+        file_rel = target.split(":")[0]
+        path = file_rel if Path(file_rel).is_absolute() else str(scope_root / file_rel)
+        return _check_filepath(path, scope_root, require_str=True)
 
     if action.action_type == AuditActionType.write_poc:
         return _check_filepath(params.get("finding_id"), None, require_str=True)

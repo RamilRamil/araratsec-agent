@@ -19,6 +19,7 @@ from sr_agent.tools.sandbox import SandboxError, SandboxTimeout
 
 from audit_agent.actions import AuditActionType
 from audit_agent.config import config
+from audit_agent.methodology import adapters as methodology_adapters
 from audit_agent.tools.onchain import (
     OnChainError,
     analyze_transactions,
@@ -253,6 +254,42 @@ AGENT_TOOL_SURFACE: dict[str, SurfaceEntry] = {
         missing_precondition="",
         valid_params={"target": "Vault.sol"},
         summary="run Slither static analysis in the sandbox.",
+    ),
+    AuditActionType.run_discovery.value: SurfaceEntry(
+        required_params=(),
+        executor=methodology_adapters.run_discovery,
+        offered=True,
+        available=True,
+        missing_precondition="",
+        valid_params={},
+        summary="discover the next include-set chunk of priority targets.",
+    ),
+    AuditActionType.run_check.value: SurfaceEntry(
+        required_params=("target",),
+        executor=methodology_adapters.run_check,
+        offered=True,
+        available=True,
+        missing_precondition="",
+        valid_params={"target": "Vault.sol"},
+        summary="check one priority target with offered analyzers.",
+    ),
+    AuditActionType.run_synthesis.value: SurfaceEntry(
+        required_params=(),
+        executor=methodology_adapters.run_synthesis,
+        offered=True,
+        available=True,
+        missing_precondition="",
+        valid_params={},
+        summary="synthesize findings and project the roadmap.",
+    ),
+    AuditActionType.skip_target.value: SurfaceEntry(
+        required_params=("target", "reason"),
+        executor=methodology_adapters.skip_target,
+        offered=True,
+        available=True,
+        missing_precondition="",
+        valid_params={"target": "Vault.sol:withdraw", "reason": "out of scope"},
+        summary="record a skip event with a reason (roadmap only).",
     ),
     AuditActionType.run_mythril.value: SurfaceEntry(
         required_params=("target",),

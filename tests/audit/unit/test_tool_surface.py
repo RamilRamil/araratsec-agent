@@ -27,6 +27,23 @@ def test_every_declared_id_has_one_surface_entry():
         assert not (entry.offered and not entry.available)
 
 
+def test_stage_ids_are_offered_read_only():
+    from sr_agent.models.action import ActionClass
+
+    from audit_agent.actions import ACTION_CLASS_MAP, AuditActionType
+
+    for t in (
+        AuditActionType.run_discovery,
+        AuditActionType.run_check,
+        AuditActionType.run_synthesis,
+        AuditActionType.skip_target,
+    ):
+        entry = AGENT_TOOL_SURFACE[t.value]
+        assert entry.offered is True
+        assert entry.available is True
+        assert ACTION_CLASS_MAP[t] is ActionClass.read_only
+
+
 def test_write_execute_ids_are_not_offered():
     for t, cls in ACTION_CLASS_MAP.items():
         if cls is ActionClass.write_execute:
@@ -129,9 +146,10 @@ def test_dispatch_invokes_entry_executor(tmp_path, monkeypatch):
         monkeypatch.setitem(AGENT_TOOL_SURFACE, tool_id, spy)
         called.clear()
         out = AUDIT_PACK.dispatch(Action(action_type=tool_id, params={}), ctx)
+        body = getattr(out, "body", out)
         assert called == [tool_id], f"{tool_id} did not invoke its contract executor"
-        assert "SENTINEL" in out
-        assert "[STUB]" not in out
+        assert "SENTINEL" in body
+        assert "[STUB]" not in body
 
 
 def test_prompt_next_action_list_equals_offered_plus_complete():

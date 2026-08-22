@@ -65,21 +65,20 @@ def memory(tmp_path: Path) -> EpisodicMemory:
 
 def test_run_stage2_local_writes_external_llm_output(session, memory):
     result = run_stage2_local(
-        session, ["Vault.sol:withdraw"], memory, _FakeClient(_GOOD), lambda t: "code"
+        session, ["Vault.sol:withdraw"], _FakeClient(_GOOD), lambda t: "code"
     )
     assert result.status == "done"
     assert len(result.findings) == 1
-    records = memory.load_for_principal(session.principal)
-    assert records and all(r.source_type is SourceType.external_llm_output for r in records)
+    assert result.findings[0].finding_id
 
 
 def test_run_stage2_local_skips_on_model_error(session, memory):
     result = run_stage2_local(
-        session, ["Vault.sol:withdraw"], memory, _FakeClient(raises=True), lambda t: "code"
+        session, ["Vault.sol:withdraw"], _FakeClient(raises=True), lambda t: "code"
     )
     assert result.status == "done"
     assert result.findings == []
-    assert memory.load_for_principal(session.principal) == []
+    assert session.finding_ids == []
 
 
 # ── available() tag-strictness + for_stage2 chain (feature 003 workability fixes) ──

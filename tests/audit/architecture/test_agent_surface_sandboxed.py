@@ -46,6 +46,10 @@ def test_every_offered_id_dispatches_without_host_subprocess(tmp_path, monkeypat
         "search_code": {"pattern": "withdraw"},
         "run_slither": {"target": str(vault)},
         "run_mythril": {"target": str(vault)},
+        "run_discovery": {},
+        "run_check": {"target": "Vault.sol"},
+        "run_synthesis": {},
+        "skip_target": {"target": "Vault.sol:withdraw", "reason": "out of scope"},
     }
     stdout_by_id = {"run_mythril": mythril_json}
 
@@ -54,6 +58,7 @@ def test_every_offered_id_dispatches_without_host_subprocess(tmp_path, monkeypat
         out = AUDIT_PACK.dispatch(
             Action(action_type=tool_id, params=params[tool_id]), ctx,
         )
-        assert "[STUB]" not in out
-        assert "status=unavailable" not in out
-        assert "[DATA START" in out
+        body = getattr(out, "body", out)
+        assert "[STUB]" not in body
+        assert "status=unavailable" not in body
+        assert "[DATA START" in body

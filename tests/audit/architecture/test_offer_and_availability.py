@@ -36,10 +36,11 @@ def test_unavailable_ids_name_precondition_and_payload(tmp_path):
         assert entry.missing_precondition
         assert entry.offered is False
         out = AUDIT_PACK.dispatch(Action(action_type=tool_id, params={}), ctx)
-        assert "status=unavailable" in out
-        assert entry.missing_precondition in out
-        assert "[STUB]" not in out
-        assert "[DATA START" in out
+        body = getattr(out, "body", out)
+        assert "status=unavailable" in body
+        assert entry.missing_precondition in body
+        assert "[STUB]" not in body
+        assert "[DATA START" in body
 
 
 def test_write_execute_unoffered_but_execute_confirmed_still_runs(tmp_path):
@@ -67,7 +68,8 @@ def test_analyze_transactions_unoffered_but_dispatchable(tmp_path):
         ),
         _ctx(tmp_path),
     )
-    assert "[STUB]" not in out
-    assert "status=unavailable" not in out
-    assert "status=did_not_run" in out
-    assert "[DATA START" in out
+    body = getattr(out, "body", out)
+    assert "[STUB]" not in body
+    assert "status=unavailable" not in body
+    assert "status=did_not_run" in body
+    assert "[DATA START" in body

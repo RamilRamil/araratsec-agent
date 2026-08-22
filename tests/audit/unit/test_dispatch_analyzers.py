@@ -10,6 +10,10 @@ from sr_agent.orchestrator.pack import PackContext
 from sr_agent.tools.sandbox import SandboxResult
 
 from audit_agent.dispatch import dispatch
+
+
+def _text(out) -> str:
+    return out.body if hasattr(out, "body") else out
 from audit_agent.pack import AUDIT_PACK
 from audit_agent.tools.static_analysis import parse_mythril_json, parse_slither_json
 
@@ -48,12 +52,13 @@ def test_run_slither_dispatches_parsed_output(tmp_path):
         Action(action_type="run_slither", params={"target": str(vault)}),
         _ctx(tmp_path, fake),
     )
-    assert "[STUB]" not in out
-    assert "status=unavailable" not in out
-    assert "[DATA START" in out
+    body = _text(out)
+    assert "[STUB]" not in body
+    assert "status=unavailable" not in body
+    assert "[DATA START" in body
     assert fake.calls
     for finding in parsed:
-        assert finding.description in out
+        assert finding.description in body
 
 
 def test_run_mythril_dispatches_parsed_output(tmp_path):
@@ -65,12 +70,13 @@ def test_run_mythril_dispatches_parsed_output(tmp_path):
         Action(action_type="run_mythril", params={"target": str(vault)}),
         _ctx(tmp_path, fake),
     )
-    assert "[STUB]" not in out
-    assert "status=unavailable" not in out
-    assert "[DATA START" in out
+    body = _text(out)
+    assert "[STUB]" not in body
+    assert "status=unavailable" not in body
+    assert "[DATA START" in body
     assert fake.calls
     for finding in parsed:
-        assert finding.description in out
+        assert finding.description in body
 
 
 def test_analyzer_target_outside_scope_rejected(tmp_path):
@@ -99,7 +105,7 @@ def test_analyzer_uses_sandbox_not_host(tmp_path, monkeypatch):
     )
     assert fake.calls
     assert fake.calls[0]["network"] == "none"
-    assert "[STUB]" not in out
+    assert "[STUB]" not in _text(out)
 
 
 def test_dispatch_never_constructs_finding(tmp_path, monkeypatch):
@@ -115,5 +121,5 @@ def test_dispatch_never_constructs_finding(tmp_path, monkeypatch):
         Action(action_type="run_slither", params={"target": str(vault)}),
         _ctx(tmp_path, fake),
     )
-    assert "[DATA START" in out
-    assert "status=ran" in out
+    assert "[DATA START" in _text(out)
+    assert "status=ran" in _text(out)
