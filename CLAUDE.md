@@ -12,9 +12,8 @@ PoC runner target-side harness (scaffold, RPC, what the agent will not bootstrap
 Active Speckit feature plan: `specs/004-audit-loop-methodology/plan.md` -
 methodology stages as pack actions on `KernelActionExecutor`; pure
 `AuditMethodologyService`; chat/batch parity; resume without `Path(".")`.
-Status: implemented (tasks T001-T060). Kernel pairing
-`003-dispatch-result-resume` is merged (`3675bac`). Feature
-`003-agent-tool-surface` is implemented. Characterization goldens live
-under `tests/audit/goldens/methodology/`; SC-010 still requires those
-bytes on `main` as their own merge-base.
+Status: closed on `main` (#7 goldens, #8 implementation; T001-T060).
+Kernel pairing `003-dispatch-result-resume` is merged (`3675bac`).
+Feature `003-agent-tool-surface` is implemented. Characterization
+goldens are on `main` under `tests/audit/goldens/methodology/` (SC-010).
 <!-- SPECKIT END -->
