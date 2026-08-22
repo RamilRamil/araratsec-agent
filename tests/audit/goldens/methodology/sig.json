@@ -1,0 +1,40 @@
+{
+  "filtered_pairs": [
+    [
+      "Bank.sol:deposit",
+      "Bank.sol:withdraw"
+    ]
+  ],
+  "functions": {
+    "deposit": {
+      "has_external_call": false,
+      "reads": [],
+      "writes": [
+        "balances",
+        "total"
+      ]
+    },
+    "getTotal": {
+      "has_external_call": false,
+      "reads": [
+        "total"
+      ],
+      "writes": []
+    },
+    "setOwner": {
+      "has_external_call": false,
+      "reads": [],
+      "writes": [
+        "owner"
+      ]
+    },
+    "withdraw": {
+      "has_external_call": true,
+      "reads": [],
+      "writes": [
+        "balances"
+      ]
+    }
+  },
+  "source": "test_sig._BANK"
+}

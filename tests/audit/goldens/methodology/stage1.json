@@ -1,0 +1,9 @@
+{
+  "notes": "Top red-flag targets:\nA.sol:risky (score=6: selfdestruct)",
+  "priority_targets": [
+    "A.sol:risky"
+  ],
+  "skipped_targets": [
+    "A.sol:safe"
+  ]
+}

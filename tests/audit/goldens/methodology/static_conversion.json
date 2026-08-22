@@ -1,0 +1,30 @@
+{
+  "file_rel": "Vault.sol",
+  "findings": [
+    {
+      "bastet_tag": "reentrancy",
+      "combined_with": [],
+      "finding_id": "SLITHER-001",
+      "function_name": "withdraw",
+      "location": "Vault.sol:12",
+      "mitigations_present": [],
+      "poc_path": null,
+      "poc_status": null,
+      "preconditions": {},
+      "severity": "high",
+      "status": "open"
+    }
+  ],
+  "slither": [
+    {
+      "check": "reentrancy-eth",
+      "confidence": "Medium",
+      "description": "Reentrancy in Vault.withdraw(uint256)",
+      "function": "withdraw",
+      "impact": "High",
+      "line": 12,
+      "severity": "high"
+    }
+  ],
+  "source": "tests/audit/fixtures/analyzer_surface/slither.json"
+}
